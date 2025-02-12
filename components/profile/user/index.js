@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   Modal,
   StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import useLogout from "../../../common/hooks/useLogout";
 
 const UserProfile = () => {

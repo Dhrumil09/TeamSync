@@ -3,25 +3,25 @@ import {
   useGetLeadListMutation,
   useAddLeadMutation,
   useAssignUserToLeadMutation,
-  useImportLeadsMutation, // Add this import at the top
 } from "../../../../api/manageAdminLeads";
 import { useEffect, useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import debounce from "lodash.debounce";
 import { useListProjectsApiQuery } from "../../../../api/manageProjects";
 import { FontAwesome } from "@expo/vector-icons";
+import { useFetchLeadStatusQuery } from "../../../../api/manageAdminLeads";
 import { use } from "react";
 
 const useManageLeads = () => {
   const userDetails = useSelector((state) => state.user.userDetails);
+  const selectedProject = useSelector((state) => state.user.selectedProject);
   const [getLeadList, { isLoading }] = useGetLeadListMutation();
   const [addLeadApi, { isLoading: isAddLeadLoading }] = useAddLeadMutation();
-  const isAbleToAddLead =
-    userDetails?.remainingLeadsCreation > 0 ? true : false;
+  const { data: leadStatus } = useFetchLeadStatusQuery();
+
   const [assignUserToLead, { isLoading: assignUserLoading }] =
     useAssignUserToLeadMutation();
-  const [importLeadsApi] = useImportLeadsMutation();
   const [page, setPage] = useState(0);
   const [lastPage, setLastPage] = useState(0);
   const [leads, setLeads] = useState([]);
@@ -32,27 +32,23 @@ const useManageLeads = () => {
   const [activeTab, setActiveTab] = useState("manual");
   const [selectedFile, setSelectedFile] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [selectedProject, setSelectedProject] = useState("");
   const [userModalVisible, setUserModalVisible] = useState(false);
   const { data: projectsData } = useListProjectsApiQuery(userDetails.accountId);
   const [filters, setFilters] = useState({
-    projectId: "",
     emailId: "",
     leadStatus: "",
     rating: "",
-    assignedTo: "",
+    assignedTo: userDetails?.userName, // Remove projectId
   });
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [selectedFilterProject, setSelectedFilterProject] = useState(null);
   const [tempFilters, setTempFilters] = useState({
-    projectId: "",
     emailId: "",
     leadStatus: "",
     rating: "",
-    assignedTo: "",
+    assignedTo: userDetails?.userName, // Remove projectId
   });
-  const [isImporting, setIsImporting] = useState(false);
 
   const updateFilter = (key, value) => {
     setTempFilters((prev) => ({
@@ -67,11 +63,6 @@ const useManageLeads = () => {
       [key]: "",
     };
     setFilters(newFilters);
-    // Reset temp filters as well for the specific key
-    setTempFilters((prev) => ({
-      ...prev,
-      [key]: "",
-    }));
     await refetchLeadsWithFilters(newFilters);
   };
 
@@ -83,11 +74,10 @@ const useManageLeads = () => {
 
   const clearAllFilters = async () => {
     const emptyFilters = {
-      projectId: "",
       emailId: "",
       leadStatus: "",
       rating: "",
-      assignedTo: "",
+      assignedTo: "", // Remove projectId
     };
     setFilters(emptyFilters);
     setTempFilters(emptyFilters);
@@ -97,11 +87,19 @@ const useManageLeads = () => {
   };
 
   const refetchLeadsWithFilters = async (currentFilters) => {
+    const transformedFilters = { ...currentFilters };
+
+    // Transform assignedTo from username to userId if it matches current user
+    if (transformedFilters.assignedTo === userDetails?.userName) {
+      transformedFilters.assignedTo = userDetails?.userId;
+    }
+
     const params = {
       accountId: userDetails.accountId,
       page: 0,
+      projectId: selectedProject?.projectId,
       ...Object.fromEntries(
-        Object.entries(currentFilters).filter(([_, value]) => value !== "")
+        Object.entries(transformedFilters).filter(([_, value]) => value !== "")
       ),
       ...(searchText.length === 10 ? { phoneNumber: searchText } : {}),
     };
@@ -120,19 +118,40 @@ const useManageLeads = () => {
     }
   };
 
+  useEffect(() => {
+    if (selectedProject?.projectId) {
+      const params = {
+        accountId: userDetails.accountId,
+        projectId: selectedProject.projectId,
+        page: 0,
+      };
+      fetchLeads(params);
+    }
+  }, [selectedProject]);
+
   const fetchLeads = async (params) => {
     try {
       const filterParams = {
         ...params,
+        projectId: selectedProject?.projectId, // Add projectId to filter params
         ...(searchText.length === 10 ? { phoneNumber: searchText } : {}),
         ...Object.fromEntries(
           Object.entries(filters).filter(([key, value]) => value !== "")
         ),
+        ...(filters.assignedTo === userDetails?.userName
+          ? { assignedTo: userDetails?.userId }
+          : {}),
       };
       const res = await getLeadList(filterParams).unwrap();
+      if (res?.content) {
+        setLeads(res.content || []);
+      }
+      if (res?.totalPages) {
+        setLastPage(res.totalPages);
+      }
+      setPage(0);
       return res;
     } catch (error) {
-      // Handle API errors
       console.log("Error:", error);
     }
   };
@@ -215,102 +234,24 @@ const useManageLeads = () => {
     return true;
   };
 
-  const addLead = async () => {
-    if (validateLeadDetails()) {
-      try {
-        console.log("selectedProject", selectedProject);
-        const payload = {
-          accountId: userDetails.accountId,
-          leadName,
-          phoneNumber,
-          emailId,
-          projectId: selectedProject?.projectId,
-        };
-        const res = await addLeadApi(payload).unwrap();
-        console.log("res", res);
-        Alert.alert("Success", "Lead added successfully.");
-        closeModal();
-        refetchLeads();
-      } catch (error) {
-        console.log("Error adding lead:", error);
-        Alert.alert("Error", "Failed to add lead. Please try again.");
-      }
-    }
-  };
-
   const chooseFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["text/csv", "application/csv", "application/vnd.ms-excel"],
-        copyToCacheDirectory: true,
-        multiple: false,
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const file = result.assets[0];
-
-        // Check file size
-        if (file.size > 10 * 1024 * 1024) {
-          Alert.alert(
-            "Error",
-            "File size exceeds 10MB limit. Please choose a smaller file."
-          );
-          return;
-        }
-
-        // Verify file extension
-        const isCSV = file.name.toLowerCase().endsWith(".csv");
-        if (!isCSV) {
-          Alert.alert("Error", "Please select a CSV file.");
-          return;
-        }
-
-        setSelectedFile(file);
+      if (result.type === "success") {
+        setSelectedFile(result);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to pick the file. Please try again.");
+      Alert.alert("Error", "Failed to pick the file.");
     }
   };
 
-  const uploadFile = async () => {
-    if (!selectedFile) {
-      Alert.alert("Error", "Please choose a file first.");
-      return;
-    }
-
-    try {
-      setIsImporting(true);
-      const formData = new FormData();
-      formData.append("accountId", userDetails.accountId);
-
-      if (selectedProject && selectedProject.id) {
-        formData.append("projectId", selectedProject.id);
-      }
-
-      // Handle file URI for both platforms
-      const fileUri = Platform.select({
-        android: selectedFile.uri,
-        ios: selectedFile.uri.replace("file://", ""),
-      });
-
-      formData.append("file", {
-        uri: fileUri,
-        name: selectedFile.name,
-        type: "text/csv", // Force CSV mime type for consistency
-      });
-
-      await importLeadsApi(formData).unwrap();
-      Alert.alert("Success", "Leads imported successfully");
+  const uploadFile = () => {
+    if (selectedFile) {
       closeModal();
-      refetchLeads();
-    } catch (error) {
-      const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to import leads. Please try again.";
-      Alert.alert("Error", errorMessage);
-    } finally {
-      setIsImporting(false);
+    } else {
+      Alert.alert("Error", "Please choose a file first.");
     }
   };
 
@@ -343,7 +284,7 @@ const useManageLeads = () => {
     try {
       const response = await assignUserToLead({
         id: leadId,
-        userId: userId,
+        userId: userDetails.userId,
       }).unwrap();
 
       // Update leads list with new assignment
@@ -351,7 +292,7 @@ const useManageLeads = () => {
         lead.leadId === leadId
           ? {
               ...lead,
-              assignedToUserId: userId,
+              assignedToUserId: userDetails.userId,
               assignedToUserName: response.assignedToUserName,
             }
           : lead
@@ -390,11 +331,10 @@ const useManageLeads = () => {
     openModal,
     closeModal,
     switchTab,
-    addLead,
     chooseFile,
     uploadFile,
     projectsData,
-    setSelectedProject,
+
     filters,
     updateFilter,
     clearFilter,
@@ -412,8 +352,9 @@ const useManageLeads = () => {
     userModalVisible,
     setUserModalVisible,
     handleAssignUser,
-    isAbleToAddLead,
-    isImporting,
+
+    userDetails,
+    leadStatus,
   };
 };
 

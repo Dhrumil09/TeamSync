@@ -8,19 +8,25 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
+import { useSignUpApiMutation } from "../api/signupAPI";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [signup, { isLoading }] = useSignUpApiMutation();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignUp = async () => {
     // Input Validation
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !phoneNumber) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
@@ -31,8 +37,9 @@ export default function SignUpScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long.");
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      Alert.alert("Error", "Please enter a valid 10-digit phone number.");
       return;
     }
 
@@ -41,20 +48,25 @@ export default function SignUpScreen() {
       return;
     }
 
-    setLoading(true);
-
     try {
-      // Simulate API request for sign up
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await signup({
+        userName: name,
+        emailId: email,
+        phoneNumber,
+        password,
+      }).unwrap();
 
-      Alert.alert("Success", "Account created successfully! Please sign in.");
-
-      // Redirect to Sign In Screen
-      router.replace("/signin");
+      Alert.alert("Success", "Account created successfully! Please sign in.", [
+        { text: "OK", onPress: () => router.replace("/") },
+      ]);
     } catch (error) {
-      Alert.alert("Error", "Failed to sign up. Please try again.");
-    } finally {
-      setLoading(false);
+      // Handle API errors
+      console.log("Error:", error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.data?.detailMessage ||
+        "Something went wrong. Please try again.";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -79,34 +91,72 @@ export default function SignUpScreen() {
           style={styles.input}
         />
         <TextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
+          placeholder="Phone Number"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
           style={styles.input}
+          maxLength={10}
         />
-        <TextInput
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          style={styles.input}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={styles.passwordInput}
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
+              size={24}
+              color="gray"
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={!showConfirmPassword}
+            style={styles.passwordInput}
+          />
+          <TouchableOpacity
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+              size={24}
+              color="gray"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.signUpButton}
+          style={[styles.signUpButton, isLoading && styles.buttonDisabled]}
           onPress={handleSignUp}
-          disabled={loading}
+          disabled={isLoading}
         >
-          <Text style={styles.signUpButtonText}>
-            {loading ? "Creating Account..." : "Sign Up"}
-          </Text>
+          <View style={styles.buttonContent}>
+            {isLoading && (
+              <ActivityIndicator color="#FFFFFF" style={styles.loader} />
+            )}
+            <Text style={styles.signUpButtonText}>
+              {isLoading ? "Creating Account..." : "Sign Up"}
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
       <Button
         title="Already have an account? Sign In"
         onPress={() => router.replace("/")}
+        disabled={isLoading}
       />
     </ScrollView>
   );
@@ -154,10 +204,37 @@ const styles = StyleSheet.create({
     letterSpacing: -0.23,
     fontWeight: "500",
     fontFamily: "Inter-Regular",
-    paddingVertical: 10,
+    // paddingVertical: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 5,
+    marginVertical: 16,
+  },
+  passwordInput: {
+    flex: 1,
+    height: 40,
+    paddingLeft: 10,
+  },
+  eyeIcon: {
+    padding: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+  },
+  loader: {
+    marginRight: 8,
   },
 });

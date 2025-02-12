@@ -4,27 +4,30 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   TextInput,
   Modal,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
 import AppIcon from "../../../assets/images/AppIcon";
 import useManageDashboard from "./hooks/useManageDashboard";
 
 export default function Tab() {
-  const [selectedProject, setSelectedProject] = useState();
-
   const [modalVisible, setModalVisible] = useState(false);
   const [newProject, setNewProject] = useState("");
   const [formError, setFormError] = useState({
     projectName: "",
   });
-  const { projectData, userDetails } = useManageDashboard();
+  const {
+    projectData,
+    userDetails,
+    setSelectedProject,
+    selectedProject = "",
+  } = useManageDashboard();
 
   useEffect(() => {
     if (projectData) {
@@ -47,45 +50,50 @@ export default function Tab() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={{ backgroundColor: "#FFF" }} />
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
       <View style={styles.header}>
         <AppIcon />
         <View style={{ flex: 1, marginLeft: 16 }}>
-          <SelectDropdown
-            data={projectData}
-            onSelect={(selectedItem, index) => {
-              console.log("selectedItem", selectedItem);
-              setSelectedProject(selectedItem);
-            }}
-            defaultValue={selectedProject}
-            renderButton={(selectedItem, isOpened) => (
-              <View style={styles.dropdownButtonStyle}>
-                <Text style={styles.dropdownButtonTxtStyle}>
-                  {(selectedItem && selectedItem?.projectName) ||
-                    "Select Project"}
-                </Text>
-                <Icon
-                  name={isOpened ? "chevron-up" : "chevron-down"}
-                  style={styles.dropdownButtonArrowStyle}
-                />
-              </View>
-            )}
-            renderItem={(item, index, isSelected) => (
-              <View
-                style={{
-                  ...styles.dropdownItemStyle,
-                  ...(isSelected && { backgroundColor: "#D2D9DF" }),
-                }}
-              >
-                <Text style={styles.dropdownItemTxtStyle}>
-                  {item?.projectName}
-                </Text>
-              </View>
-            )}
-            showsVerticalScrollIndicator={false}
-            dropdownStyle={styles.dropdownMenuStyle}
-          />
+          {projectData?.length > 1 ? (
+            <SelectDropdown
+              data={projectData}
+              onSelect={(selectedItem) => {
+                setSelectedProject(selectedItem);
+              }}
+              defaultValue={selectedProject}
+              renderButton={(selectedItem, isOpened) => (
+                <View style={styles.dropdownButtonStyle}>
+                  <Text style={styles.dropdownButtonTxtStyle}>
+                    {(selectedItem && selectedItem?.projectName) ||
+                      "Select Project"}
+                  </Text>
+                  <Icon
+                    name={isOpened ? "chevron-up" : "chevron-down"}
+                    style={styles.dropdownButtonArrowStyle}
+                  />
+                </View>
+              )}
+              renderItem={(item, index, isSelected) => (
+                <View
+                  style={{
+                    ...styles.dropdownItemStyle,
+                    ...(isSelected && { backgroundColor: "#D2D9DF" }),
+                  }}
+                >
+                  <Text style={styles.dropdownItemTxtStyle}>
+                    {item?.projectName}
+                  </Text>
+                </View>
+              )}
+              showsVerticalScrollIndicator={false}
+              dropdownStyle={styles.dropdownMenuStyle}
+            />
+          ) : (
+            <Text style={styles.singleProjectText}>
+              {selectedProject?.projectName || "No Project"}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -116,23 +124,6 @@ export default function Tab() {
             <Text style={styles.statLabel}>Total Contacted</Text>
           </View>
         </View>
-        {/* Project List */}
-        {/* <Text style={{ marginHorizontal: 16, marginTop: 32, fontSize: 16 }}>
-          Projects ({projectList.length})
-        </Text>
-        <View style={styles.projectListContainer}>
-          {projectList.map((project, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.projectListItem}
-              onPress={() => setSelectedProject(project)}
-            >
-              <Text style={styles.projectListItemText}>{project}</Text>
-            </TouchableOpacity>
-          ))}
-        </View> */}
-
-        {/* Stats Container */}
       </ScrollView>
     </View>
   );
@@ -302,5 +293,11 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: "#fff",
+  },
+  singleProjectText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#151E26",
+    paddingVertical: 8,
   },
 });

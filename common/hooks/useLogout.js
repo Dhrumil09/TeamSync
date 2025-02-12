@@ -1,5 +1,6 @@
 import { useDispatch } from "react-redux";
 import { manageProjectsAPI } from "../../api/manageProjects";
+
 import { logout } from "../../store/slices/userSlice";
 import { useRouter } from "expo-router";
 
@@ -8,9 +9,17 @@ const useLogout = () => {
   const router = useRouter();
 
   const handleLogout = () => {
+    // Clear all API states
     dispatch(manageProjectsAPI.util.resetApiState());
+
+    // Clear all store slices
     dispatch(logout());
-    router.replace("/"); // Redirect to the index page
+
+    // Clear any persisted storage if needed
+    // AsyncStorage.clear(); // Uncomment if using AsyncStorage
+
+    // Navigate to login
+    router.replace("/");
   };
 
   return handleLogout;

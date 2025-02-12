@@ -3,11 +3,13 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from '../store/store'; // Adjust the path
 import { Stack } from 'expo-router';
-
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 export default function RootLayout() {
 
   return (
     <Provider store={store}>
+      <SafeAreaProvider>
+    
       <PersistGate loading={null} persistor={persistor}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen
@@ -29,6 +31,7 @@ export default function RootLayout() {
 
         </Stack>
       </PersistGate>
+      </SafeAreaProvider>
     </Provider>
   );
 }

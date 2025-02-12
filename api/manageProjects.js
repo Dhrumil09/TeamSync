@@ -1,7 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import API_BASE_URL from "../config/apiConfig";
 import endPoints from "./endPoints";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export const manageProjectsAPI = createApi({
   reducerPath: "manageProjectsAPI",

@@ -1,4 +1,5 @@
-import { View, StyleSheet, Text, SafeAreaView, StatusBar } from "react-native";
+import { View, StyleSheet, Text, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import AdminProfile from "../../../components/profile/admin";
 import UserProfile from "../../../components/profile/user";
@@ -7,24 +8,27 @@ export default function Tab() {
   const userType = useSelector((state) => state.user.userType);
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={{ backgroundColor: "#FFF" }} />
-      <StatusBar translucent />
-      <View style={styles.header}>
-        <Text
-          style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
-        >
-          Profile
-        </Text>
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: "#FFF" }}>
+      <View style={styles.container}>
+        <StatusBar translucent />
+        <View style={styles.header}>
+          <Text
+            style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
+          >
+            Profile
+          </Text>
+        </View>
+        {userType === "admin" ? <AdminProfile /> : <UserProfile />}
       </View>
-      {userType === "admin" ? <AdminProfile /> : <UserProfile />}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#EFEFEF",
+    height: "100%",
   },
   header: {
     flexDirection: "row",

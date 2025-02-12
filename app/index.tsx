@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import AppIcon from "../assets/images/AppIcon";
@@ -16,6 +17,7 @@ import { useLoginMutation } from "@/api/loginApi";
 import { login, setToken } from "../store/slices/userSlice";
 import GoogleIcon from "../assets/images/GoogleIcon";
 import generateBasicAuthHeader from "../common/generateToken";
+import  useGetUserDetails  from "@/hooks/useGetUserDetails";
 import { useRootNavigationState } from 'expo-router'
 
 export function useIsNavigationReady() {
@@ -25,14 +27,15 @@ export function useIsNavigationReady() {
 let user = {
   0: 'admin@test.com',
   1: 'vishal@test.com',
-  2: 'crmuser@test.com'
+  2: 'crmuser10@test.com'
 }
 
 export default function SignInScreen() {
   const userType = useSelector((state) => state.user.userType);
   const isNavigationReady = useIsNavigationReady(); // Ensure navigation is ready
   const dispatch = useDispatch();
-  const [email, setEmail] = useState(user[0]);
+  const  {getUserDetails}  = useGetUserDetails();
+  const [email, setEmail] = useState(user[2]);
   const [password, setPassword] = useState("test");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -42,6 +45,7 @@ export default function SignInScreen() {
 useEffect(() => {
     if(isNavigationReady ){
       if(userType === 'admin' || userType === 'user'){
+        getUserDetails();
         router.replace("/client/(tabs)"); 
       }
     }
@@ -153,8 +157,17 @@ useEffect(() => {
         </View> */}
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, isLoading && styles.buttonDisabled]} 
+          onPress={handleSignIn}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" style={styles.loader} />
+          ) : null}
+          <Text style={styles.loginButtonText}>
+            {isLoading ? "Signing in..." : "Login"}
+          </Text>
         </TouchableOpacity>
       </View>
       {/* <View style={styles.orContainer}>
@@ -167,11 +180,11 @@ useEffect(() => {
           <GoogleIcon />
           <Text style={styles.googleButtonText}>Sign in with Google</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
       <Button
         title="Don't have an account? Sign Up"
         onPress={() => router.push("/signup")}
-      /> */}
+      />
     </ScrollView>
   );
 }
@@ -226,5 +239,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "Inter-Regular",
     paddingVertical: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loader: {
+    marginRight: 8,
   },
 });

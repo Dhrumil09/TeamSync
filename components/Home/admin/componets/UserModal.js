@@ -65,9 +65,11 @@ const UserSelectionModal = ({ visible, onClose, onSelect }) => {
             data={usersListData}
             keyExtractor={(item) => item?.userId?.toString()}
             renderItem={renderUserItem}
-            contentContainerStyle={styles.listContainer}
             onEndReached={loadMoreUsers}
             onEndReachedThreshold={0.2}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
           />
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={onClose}>
@@ -98,7 +100,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "90%",
-    height: height * 0.7,
+    maxHeight: "80%",
     backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
@@ -119,7 +121,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
@@ -135,8 +138,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "gray",
   },
-  listContainer: {
-    maxHeight: height * 0.5,
+  listWrapper: {
+    flex: 1,
+    marginVertical: 10,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -157,6 +161,14 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  list: {
+    maxHeight: "90%", // Adjusted height
+    minHeight: 200, // Added minimum height
+    backgroundColor: "#fff",
+  },
+  listContent: {
+    paddingVertical: 8,
   },
 });
 

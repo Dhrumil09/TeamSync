@@ -4,13 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   TextInput,
   Modal,
   Switch,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
 import AppIcon from "../../../assets/images/AppIcon";
@@ -19,15 +21,35 @@ import useHandleUserModal from "./hooks/useHandleUserModal";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import UserSelectionModal from "./componets/UserModal";
 
+const getStatusColor = (status) => {
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":
+      return "#4CAF50"; // Green
+    case "INACTIVE":
+      return "#FF5252"; // Red
+    case "PENDING":
+      return "#FFC107"; // Amber
+    case "COMPLETED":
+      return "#2196F3"; // Blue
+    default:
+      return "#757575"; // Grey
+  }
+};
+
 export default function Tab() {
   const {
     projectListData,
+    filteredProjects,
+    isLoading,
     isAbleToAddProject,
     addProject,
     projectStatusListData,
     accountName,
     setSelectedProject,
     addUserToProject,
+    searchQuery,
+    setSearchQuery,
+    onRefresh,
   } = useManageProjects();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -39,9 +61,13 @@ export default function Tab() {
   const [projectStatus, setProjectStatus] = useState("ACTIVE");
 
   const [userModalVisible, setUserModalVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const users = ["John Doe", "Jane Smith", "Michael Johnson", "Emily Davis"];
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setIsRefreshing(false);
+  };
 
   const openEditModal = (project) => {
     setSelectedProjectData(project);
@@ -77,9 +103,103 @@ export default function Tab() {
     setModalVisible(false);
   };
 
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <View style={styles.searchInputWrapper}>
+        <Icon name="magnify" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by project name or status"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+          returnKeyType="search"
+        />
+        {searchQuery ? (
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+            style={styles.clearButton}
+          >
+            <Icon name="close" size={20} color="#666" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialIcons name="folder-open" size={60} color="#DDE1E6" />
+      <Text style={styles.emptyTitle}>
+        {searchQuery ? "No Projects Found" : "No Projects Yet"}
+      </Text>
+      <Text style={styles.emptyText}>
+        {searchQuery
+          ? "Try adjusting your search terms"
+          : "Start by adding your first project"}
+      </Text>
+    </View>
+  );
+
+  const renderProjectList = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#F6461A" />
+          <Text style={styles.loadingText}>Loading projects...</Text>
+        </View>
+      );
+    }
+
+    if (!filteredProjects?.length) {
+      return renderEmptyState();
+    }
+
+    return (
+      <View style={styles.projectListContainer}>
+        {filteredProjects.map((project, index) => (
+          <View key={index}>
+            <View style={styles.projectListItem}>
+              <View style={styles.projectInfo}>
+                <View style={styles.statusIndicator}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: getStatusColor(project.status) },
+                    ]}
+                  />
+                  <Text style={styles.projectListItemText} numberOfLines={1}>
+                    {project.projectName}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(project)}
+                >
+                  <Icon name="pencil" size={24} color="#F6461A" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.addUserButtonStyle}
+                  onPress={() => addUserModal(project)}
+                >
+                  <MaterialIcons name="person-add" size={24} color="#F6461A" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {index !== filteredProjects.length - 1 && (
+              <View style={styles.divider} />
+            )}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <SafeAreaView style={{ backgroundColor: "#FFF" }} />
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
       <View style={styles.header}>
         <AppIcon />
@@ -88,45 +208,24 @@ export default function Tab() {
         </View>
       </View>
 
-      <ScrollView>
-        <Text style={{ marginHorizontal: 16, marginTop: 32, fontSize: 16 }}>
-          Projects ({projectListData?.length})
-        </Text>
-        <View style={styles.projectListContainer}>
-          {projectListData?.map((project, index) => (
-            <View key={index}>
-              <View key={index} style={styles.projectListItem}>
-                <Text style={styles.projectListItemText} numberOfLines={2}>
-                  {project.projectName}
-                </Text>
-                <View style={{ flexDirection: "row" }}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => openEditModal(project)}
-                  >
-                    <Icon name="pencil" size={24} color="#F6461A" />
-                  </TouchableOpacity>
+      {renderSearchBar()}
 
-                  <TouchableOpacity
-                    style={styles.addUserButtonStyle}
-                    onPress={() => addUserModal(project)}
-                  >
-                    <MaterialIcons
-                      name="person-add"
-                      size={24}
-                      color="#F6461A"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              {index !== projectListData?.length - 1 && (
-                <View style={styles.devider} />
-              )}
-            </View>
-          ))}
-        </View>
-
-        {/* Stats Container */}
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={["#F6461A"]}
+            tintColor="#F6461A"
+          />
+        }
+      >
+        {filteredProjects?.length > 0 && (
+          <Text style={styles.sectionTitle}>
+            Projects ({filteredProjects?.length || 0})
+          </Text>
+        )}
+        {renderProjectList()}
       </ScrollView>
 
       <TouchableOpacity
@@ -276,7 +375,6 @@ export default function Tab() {
         <UserSelectionModal
           visible={userModalVisible}
           onClose={() => setUserModalVisible(false)}
-          users={users}
           onSelect={(user) => {
             addUserToProject({ userIds: user });
           }}
@@ -471,5 +569,104 @@ const styles = StyleSheet.create({
 
   addUserButtonStyle: {
     marginLeft: 16,
+  },
+  searchContainer: {
+    padding: 16,
+    // backgroundColor: "#FFF",
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    paddingHorizontal: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 14,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  statusIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  projectDetails: {
+    flex: 1,
+  },
+  projectInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statusText: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  projectListItemText: {
+    fontSize: 16,
+    color: "#151E26",
+    fontWeight: "500",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+    marginTop: 60,
+    backgroundColor: "#FFF",
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#525252",
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#666",
+    fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    marginTop: 40,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#151E26",
+    marginHorizontal: 16,
+    marginTop: 16,
   },
 });

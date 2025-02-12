@@ -2,6 +2,7 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import userReducer from "./slices/userSlice";
+import leadListReducer from "./slices/leadListSlice";
 import helperReducer from "./slices/helperSlice";
 import {
   persistStore,
@@ -19,7 +20,8 @@ import { manageProjectsAPI } from "../api/manageProjects";
 import { manageAdminLeadsProjectAPI } from "../api/manageAdminLeads";
 import { manageUsersAPI } from "../api/manageUsers";
 import { userProjectApi } from "../api/userProjectApi";
-
+import { signUpAPI } from "../api/signupAPI";
+import { userProfileApi } from "../api/userProfileApi";
 // Configure persist settings
 const persistConfig = {
   key: "root",
@@ -33,11 +35,15 @@ const persistConfig = {
 const rootReducer = combineReducers({
   user: userReducer,
   helper: helperReducer,
+  leadList: leadListReducer,
   [loginAPI.reducerPath]: loginAPI.reducer,
   [manageProjectsAPI.reducerPath]: manageProjectsAPI.reducer,
   [manageAdminLeadsProjectAPI.reducerPath]: manageAdminLeadsProjectAPI.reducer,
   [manageUsersAPI.reducerPath]: manageUsersAPI.reducer,
   [userProjectApi.reducerPath]: userProjectApi.reducer,
+  [signUpAPI.reducerPath]: signUpAPI.reducer,
+  [userProfileApi.reducerPath]: userProfileApi.reducer,
+
   // This slice will NOT be persisted
   //   anotherSlice: anotherSliceReducer, // This slice WILL be persisted
 });
@@ -58,6 +64,8 @@ export const store = configureStore({
       manageAdminLeadsProjectAPI.middleware,
       manageUsersAPI.middleware,
       userProjectApi.middleware,
+      signUpAPI.middleware,
+      userProfileApi.middleware,
     ]),
 });
 

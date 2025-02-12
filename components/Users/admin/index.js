@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   TextInput,
@@ -12,9 +11,37 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+  Switch, // Add this import
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
+import { Feather } from "@expo/vector-icons"; // Add this import
 import useHandleUsers from "./hooks/useHandleUsers";
+import SelectDropdown from "react-native-select-dropdown";
+import { styles } from "./style";
+
+const EmptyState = ({ hasActiveFilters }) => (
+  <View style={styles.emptyContainer}>
+    <Icon name="account-off-outline" size={60} color="#DDE1E6" />
+    <Text style={styles.emptyTitle}>
+      {hasActiveFilters ? "No Users Found" : "No Users Yet"}
+    </Text>
+    <Text style={styles.emptyText}>
+      {hasActiveFilters
+        ? "Try adjusting your filters or search terms"
+        : "Start by adding your first user"}
+    </Text>
+  </View>
+);
+
+const LoadingState = () => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#F6461A" />
+    <Text style={styles.loadingText}>Loading users...</Text>
+  </View>
+);
 
 export default function Tab() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,7 +59,45 @@ export default function Tab() {
   });
 
   const [editingUserId, setEditingUserId] = useState(null);
-  const { users, setUsers, addUser, isAbleToAddUser } = useHandleUsers();
+  const {
+    users,
+    setUsers,
+    addUser,
+    isAbleToAddUser,
+    filters,
+    tempFilters,
+    updateFilter,
+    clearFilter,
+    clearAllFilters,
+    applyFilters,
+    searchText,
+    setSearchText,
+    isLoading,
+    isAddLoading,
+    hasMoreData,
+    isLoadingMore,
+    loadMoreUsers,
+  } = useHandleUsers();
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  const statusOptions = ["ACTIVE", "INACTIVE"];
+  const roleOptions = ["USER", "ADMIN"];
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await getUserList();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const openModal = (user = null) => {
     if (user) {
       setUserName(user.userName);
@@ -40,7 +105,7 @@ export default function Tab() {
       setPhoneNumber(user.phoneNumber);
       setPassword("");
       setUserType(user.userType);
-      setEditingUserId(user.id);
+      setEditingUserId(user.userId);
     } else {
       setUserName("");
       setEmailId("");
@@ -60,6 +125,13 @@ export default function Tab() {
     setUserType("User");
     setEditingUserId(null);
     setModalVisible(false);
+    setFormError({
+      userName: "",
+      emailId: "",
+      phoneNumber: "",
+      password: "",
+      userType: "",
+    });
   };
 
   const validateInputs = () => {
@@ -100,24 +172,456 @@ export default function Tab() {
       );
     } else {
       addUser({ userName, emailId, phoneNumber, password });
-      Alert.alert("User added", `Name: ${userName}, Email: ${emailId}`);
     }
 
     closeModal();
   };
 
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <View style={styles.searchInputWrapper}>
+        <Icon name="magnify" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by phone number"
+          value={searchText}
+          onChangeText={setSearchText}
+          keyboardType="phone-pad"
+          maxLength={10}
+        />
+        {searchText ? (
+          <TouchableOpacity
+            onPress={() => setSearchText("")}
+            style={styles.clearButton}
+          >
+            <Icon name="close" size={20} color="#666" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      <TouchableOpacity
+        style={styles.filterButton}
+        onPress={() => setFilterModalVisible(true)}
+      >
+        <Icon name="filter" size={20} color="#F6461A" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const handleApplyFilters = async () => {
+    await applyFilters();
+    setFilterModalVisible(false);
+  };
+
+  const getChipColor = (key) => {
+    const colors = {
+      userName: { bg: "#E8F5E9", text: "#2E7D32", border: "#81C784" },
+      emailId: { bg: "#E3F2FD", text: "#1565C0", border: "#90CAF9" },
+      status: { bg: "#EDE7F6", text: "#4527A0", border: "#B39DDB" },
+      role: { bg: "#FCE4EC", text: "#C2185B", border: "#F48FB1" },
+    };
+    return colors[key] || { bg: "#F5F5F5", text: "#616161", border: "#E0E0E0" };
+  };
+
+  const renderFilterChips = () => {
+    return Object.entries(filters).map(([key, value]) => {
+      if (!value) return null;
+      const chipColor = getChipColor(key);
+
+      return (
+        <TouchableOpacity
+          key={key}
+          style={[
+            styles.chipContainer,
+            {
+              backgroundColor: chipColor.bg,
+              borderColor: chipColor.border,
+            },
+          ]}
+          onPress={() => clearFilter(key)}
+        >
+          <Text
+            style={[styles.chipText, { color: chipColor.text }]}
+            numberOfLines={1}
+          >
+            {key}: {value}
+          </Text>
+          <Icon
+            name="close"
+            size={14}
+            color={chipColor.text}
+            style={{ marginLeft: 4 }}
+          />
+        </TouchableOpacity>
+      );
+    });
+  };
+
+  const handleClearAll = () => {
+    setSelectedStatus(null);
+    setSelectedRole(null);
+    clearAllFilters();
+  };
+
+  const renderRoleFilter = () => (
+    <View style={styles.radioGroupContainer}>
+      {roleOptions.map((role) => (
+        <TouchableOpacity
+          key={role}
+          style={styles.roleRadioOption}
+          onPress={() => {
+            setSelectedRole(role);
+            updateFilter("role", role);
+          }}
+        >
+          <View
+            style={[
+              styles.radioCircle,
+              tempFilters.role === role && styles.radioSelected,
+            ]}
+          />
+          <Text style={styles.radioText}>{role}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <SafeAreaView style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
-      <View style={styles.header}>
-        <Text
-          style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
-        >
-          Users
-        </Text>
-      </View>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }}>
+        <View style={styles.header}>
+          <Text
+            style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
+          >
+            Users
+          </Text>
+        </View>
 
+        {renderSearchBar()}
+
+        {isLoading ? (
+          <LoadingState />
+        ) : (
+          <>
+            {Object.values(filters).some((value) => value) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipScrollView}
+                contentContainerStyle={styles.chipScrollContent}
+              >
+                {renderFilterChips()}
+              </ScrollView>
+            )}
+
+            {users.length === 0 ? (
+              <EmptyState
+                hasActiveFilters={
+                  Object.values(filters).some((v) => v) || searchText
+                }
+              />
+            ) : (
+              <ScrollView
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={["#F6461A"]}
+                    tintColor="#F6461A"
+                  />
+                }
+                onScroll={({ nativeEvent }) => {
+                  const { layoutMeasurement, contentOffset, contentSize } =
+                    nativeEvent;
+                  const isCloseToBottom =
+                    layoutMeasurement.height + contentOffset.y >=
+                    contentSize.height - 20;
+
+                  if (isCloseToBottom && hasMoreData && !isLoadingMore) {
+                    loadMoreUsers();
+                  }
+                }}
+                scrollEventThrottle={400}
+              >
+                <View style={styles.userListContainer}>
+                  {users.map((user) => (
+                    <View key={user?.userId} style={styles.card}>
+                      <View style={styles.cardContent}>
+                        <Text style={styles.cardUserName}>{user.userName}</Text>
+                        <Text style={styles.cardPhoneNumber}>
+                          {user.phoneNumber}
+                        </Text>
+                        <Text style={styles.cardUserType}>({user.role})</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => openModal(user)}
+                      >
+                        <Icon name="pencil" size={24} color="#F6461A" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {isLoadingMore && (
+                    <View style={styles.loadingMoreContainer}>
+                      <ActivityIndicator size="small" color="#F6461A" />
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            )}
+          </>
+        )}
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={closeModal}
+        >
+          <TouchableWithoutFeedback onPress={closeModal}>
+            <View style={styles.modalContainer}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>
+                    {console.log("editingUserId", editingUserId)}
+                    {editingUserId ? "Edit User" : "Add New User"}
+                  </Text>
+
+                  <View style={styles.formContainer}>
+                    <View style={styles.formInputContainer}>
+                      <Text style={styles.label}>Username</Text>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          formError.userName && styles.errorInput,
+                        ]}
+                        placeholder="Enter username"
+                        value={userName}
+                        onChangeText={setUserName}
+                      />
+                      {formError.userName && (
+                        <Text style={styles.error}>{formError.userName}</Text>
+                      )}
+                    </View>
+
+                    <View style={styles.formInputContainer}>
+                      <Text style={styles.label}>Email</Text>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          formError.emailId && styles.errorInput,
+                        ]}
+                        placeholder="Enter email"
+                        value={emailId}
+                        onChangeText={setEmailId}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                      {formError.emailId && (
+                        <Text style={styles.error}>{formError.emailId}</Text>
+                      )}
+                    </View>
+
+                    <View style={styles.formInputContainer}>
+                      <Text style={styles.label}>Phone Number</Text>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          formError.phoneNumber && styles.errorInput,
+                        ]}
+                        placeholder="Enter phone number"
+                        value={phoneNumber}
+                        onChangeText={setPhoneNumber}
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                      />
+                      {formError.phoneNumber && (
+                        <Text style={styles.error}>
+                          {formError.phoneNumber}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View style={styles.formInputContainer}>
+                      <Text style={styles.label}>Password</Text>
+                      <View style={styles.passwordContainer}>
+                        <TextInput
+                          style={[
+                            styles.passwordInput,
+                            formError.password && styles.errorInput,
+                          ]}
+                          placeholder="Enter password"
+                          secureTextEntry={!showPassword}
+                          value={password}
+                          onChangeText={setPassword}
+                        />
+                        <TouchableOpacity
+                          style={styles.eyeIcon}
+                          onPress={() => setShowPassword(!showPassword)}
+                        >
+                          <Feather
+                            name={showPassword ? "eye" : "eye-off"}
+                            size={20}
+                            color="#666"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      {formError.password && (
+                        <Text style={styles.error}>{formError.password}</Text>
+                      )}
+                    </View>
+
+                    <View style={styles.formInputContainer}>
+                      <View style={styles.switchContainer}>
+                        <Text style={styles.switchLabel}>is Admin ?</Text>
+                        <Switch
+                          trackColor={{ false: "#E0E0E0", true: "#F6461A" }}
+                          thumbColor={userType === "Admin" ? "#fff" : "#fff"}
+                          ios_backgroundColor="#E0E0E0"
+                          onValueChange={(value) =>
+                            setUserType(value ? "Admin" : "User")
+                          }
+                          value={userType === "Admin"}
+                        />
+                      </View>
+                      {formError.userType && (
+                        <Text style={styles.error}>{formError.userType}</Text>
+                      )}
+                    </View>
+                  </View>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={closeModal}
+                      disabled={isAddLoading}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.addButtonModal}
+                      onPress={saveUser}
+                      disabled={isAddLoading}
+                    >
+                      {isAddLoading ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <Text style={styles.addButtonText}>
+                          {editingUserId ? "Update" : "Add"}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <Modal
+          visible={filterModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setFilterModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Filter Users</Text>
+                {Object.values(filters).some((v) => v) && (
+                  <TouchableOpacity onPress={handleClearAll}>
+                    <Text style={styles.clearAllText}>Clear All</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.modalFilterSection}>
+                  <Text style={styles.filterLabel}>Username</Text>
+                  <TextInput
+                    style={styles.filterInput}
+                    value={tempFilters.userName}
+                    onChangeText={(value) => updateFilter("userName", value)}
+                    placeholder="Search by username"
+                  />
+                </View>
+
+                <View style={styles.modalFilterSection}>
+                  <Text style={styles.filterLabel}>Email</Text>
+                  <TextInput
+                    style={styles.filterInput}
+                    value={tempFilters.emailId}
+                    onChangeText={(value) => updateFilter("emailId", value)}
+                    placeholder="Search by email"
+                    keyboardType="email-address"
+                  />
+                </View>
+
+                <View style={styles.modalFilterSection}>
+                  <Text style={styles.filterLabel}>Status</Text>
+
+                  <SelectDropdown
+                    data={statusOptions}
+                    onSelect={(value) => {
+                      setSelectedStatus(value);
+                      updateFilter("status", value);
+                    }}
+                    defaultValue={selectedStatus}
+                    defaultButtonText="Select Status"
+                    renderButton={(selectedItem, isOpened) => (
+                      <View style={styles.dropdownButtonStyle}>
+                        <Text style={styles.dropdownButtonTxtStyle}>
+                          {selectedStatus || "Select Status"}
+                        </Text>
+                        <Icon
+                          name={isOpened ? "chevron-up" : "chevron-down"}
+                          style={styles.dropdownButtonArrowStyle}
+                        />
+                      </View>
+                    )}
+                    renderItem={(item, index, isSelected) => (
+                      <View
+                        style={{
+                          ...styles.dropdownItemStyle,
+                          ...(isSelected && { backgroundColor: "#D2D9DF" }),
+                        }}
+                      >
+                        <Text
+                          numberOfLines={2}
+                          style={styles.dropdownItemTxtStyle}
+                        >
+                          {item}
+                        </Text>
+                      </View>
+                    )}
+                    showsVerticalScrollIndicator={false}
+                    dropdownStyle={styles.dropdownMenuStyle}
+                  />
+                </View>
+
+                <View style={styles.modalFilterSection}>
+                  <Text style={styles.filterLabel}>Role</Text>
+                  {renderRoleFilter()}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setFilterModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addButtonModal}
+                  onPress={handleApplyFilters}
+                >
+                  <Text style={styles.addButtonText}>Apply</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
       <TouchableOpacity
         style={[
           styles.floatingButton,
@@ -147,307 +651,6 @@ export default function Tab() {
           </Text>
         </View>
       </TouchableOpacity>
-      <ScrollView>
-        <View style={styles.userListContainer}>
-          {users.map((user) => (
-            <View key={user?.userId} style={styles.card}>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardUserName}>{user.userName}</Text>
-                <Text style={styles.cardPhoneNumber}>{user.phoneNumber}</Text>
-                <Text style={styles.cardUserType}>({user.role})</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => openModal(user)}
-              >
-                <Icon name="pencil" size={24} color="#F6461A" />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-      <Modal
-        animationType="none"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            setModalVisible(false);
-            Keyboard.dismiss();
-          }}
-        >
-          <View style={styles.modalBackdrop}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>
-                    {editingUserId ? "Edit User" : "Add New User"}
-                  </Text>
-                  <View style={{ marginBottom: 16 }}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        formError.userName && styles.errorInput,
-                      ]}
-                      placeholder="User Name"
-                      value={userName}
-                      onChangeText={setUserName}
-                    />
-                    {formError.userName && (
-                      <Text style={styles.error}>{formError.userName}</Text>
-                    )}
-                  </View>
-                  <View style={{ marginBottom: 16 }}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        formError.emailId && styles.errorInput,
-                      ]}
-                      placeholder="Email ID"
-                      value={emailId}
-                      onChangeText={setEmailId}
-                    />
-                    {formError.emailId && (
-                      <Text style={styles.error}>{formError.emailId}</Text>
-                    )}
-                  </View>
-                  <View style={{ marginBottom: 16 }}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        formError.phoneNumber && styles.errorInput,
-                      ]}
-                      placeholder="Phone Number"
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                      keyboardType="numeric"
-                    />
-                    {formError.phoneNumber && (
-                      <Text style={styles.error}>{formError.phoneNumber}</Text>
-                    )}
-                  </View>
-                  {!editingUserId && (
-                    <View style={{ marginBottom: 16 }}>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          formError.password && styles.errorInput,
-                        ]}
-                        placeholder="Password"
-                        secureTextEntry
-                        value={password}
-                        onChangeText={setPassword}
-                      />
-                      {formError.password && (
-                        <Text style={styles.error}>{formError.password}</Text>
-                      )}
-                    </View>
-                  )}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text style={styles.label}>User Type:</Text>
-                    <View style={styles.radioGroup}>
-                      <TouchableOpacity
-                        style={styles.radioOption}
-                        onPress={() => setUserType("User")}
-                      >
-                        <View
-                          style={[
-                            styles.radioCircle,
-                            userType === "User" && styles.radioSelected,
-                          ]}
-                        />
-                        <Text>User</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.radioOption}
-                        onPress={() => setUserType("Admin")}
-                      >
-                        <View
-                          style={[
-                            styles.radioCircle,
-                            userType === "Admin" && styles.radioSelected,
-                          ]}
-                        />
-                        <Text>Admin</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {formError.userType && (
-                      <Text style={styles.error}>{formError.userType}</Text>
-                    )}
-                  </View>
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={closeModal}
-                    >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.addButtonModal}
-                      onPress={saveUser}
-                    >
-                      <Text style={styles.addButtonText}>
-                        {editingUserId ? "Update" : "Add"}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
-  },
-  header: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    alignItems: "center",
-    paddingBottom: 5,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    justifyContent: "center",
-  },
-  floatingButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#F6461A",
-    width: 140,
-    height: 50,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    flexDirection: "row",
-    zIndex: 1,
-  },
-  floatingButtonContent: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  floatingButtonText: {
-    marginLeft: 8,
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  userListContainer: {
-    marginTop: 16, // Adjusted to prevent overlap with floating button
-    paddingHorizontal: 16,
-  },
-  card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    marginBottom: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardUserName: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cardPhoneNumber: {
-    fontSize: 14,
-    color: "#777",
-  },
-  editButton: {
-    padding: 8,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContainer: {
-    width: "80%",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
-  },
-  error: {
-    color: "red",
-    marginTop: 4,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cancelButton: {
-    padding: 10,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 8,
-    paddingHorizontal: 30,
-    fontSize: 16,
-  },
-  cancelButtonText: {
-    color: "#000",
-  },
-  addButtonModal: {
-    padding: 10,
-    backgroundColor: "#F6461A",
-    borderRadius: 8,
-    paddingHorizontal: 30,
-  },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  radioGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-  },
-  radioOption: { flexDirection: "row", alignItems: "center", marginRight: 20 },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#000",
-    marginRight: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  radioSelected: { backgroundColor: "#F6461A", borderColor: "#F6461A" },
-});

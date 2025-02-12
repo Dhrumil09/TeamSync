@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import API_BASE_URL from "../config/apiConfig";
+import endPoints from "./endPoints";
 
 export const loginAPI = createApi({
   reducerPath: "loginAPI",
@@ -26,7 +27,20 @@ export const loginAPI = createApi({
         };
       },
     }),
+    updateAdminAccount: builder.mutation({
+      query: (payload) => {
+        console.log("API payload:", payload); // Debug log
+        return {
+          url: `${endPoints.accounts}/${payload.accountId}`, // API endpoint
+          method: "PATCH",
+          body: payload?.data, // Fix: Send the data object directly instead of string
+          headers: {
+            "Content-Type": "application/json", // Add proper content type
+          },
+        };
+      },
+    }),
   }),
 });
 
-export const { useLoginMutation } = loginAPI;
+export const { useLoginMutation, useUpdateAdminAccountMutation } = loginAPI;

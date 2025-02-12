@@ -5,8 +5,10 @@ import {
   useGetProjectStatusListApiQuery,
   useAssignProjectApiMutation,
 } from "../../../../api/manageProjects";
+import React from "react";
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
+import useGetUserDetails from "../../../../hooks/useGetUserDetails";
 
 const useManageProject = () => {
   const userDetails = useSelector((state) => state.user.userDetails);
@@ -18,6 +20,7 @@ const useManageProject = () => {
     isLoading,
     refetch: refetchProjects,
   } = useListProjectsApiQuery(userDetails.accountId);
+  const { getUserDetails } = useGetUserDetails();
   const [assignProjectAPI] = useAssignProjectApiMutation();
   const accountName = userDetails?.accountName;
   const { data: projectStatusListData } = useGetProjectStatusListApiQuery();
@@ -25,6 +28,22 @@ const useManageProject = () => {
     useCreateUpdateProjectApiMutation();
 
   const [selectedProject, setSelectedProject] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Update the filtering logic to be more robust
+  const filteredProjects = React.useMemo(() => {
+    if (!data) return [];
+    const searchTerm = searchQuery.toLowerCase().trim();
+
+    if (!searchTerm) return data;
+
+    return data.filter((project) => {
+      return (
+        project.projectName?.toLowerCase().includes(searchTerm) ||
+        project.status?.toLowerCase().includes(searchTerm)
+      );
+    });
+  }, [data, searchQuery]);
 
   const addProject = async (projectData) => {
     try {
@@ -63,7 +82,8 @@ const useManageProject = () => {
         projectId: selectedProject,
         params: { userId: userIdsString },
       };
-      const res = await assignProjectAPI(payload).unwrap();
+      await assignProjectAPI(payload).unwrap();
+      Alert.alert("Success", "User added to project successfully.");
     } catch (error) {
       // Handle API errors
       console.log("Error:", error);
@@ -75,8 +95,14 @@ const useManageProject = () => {
     }
   };
 
+  const onRefresh = () => {
+    refetchProjects();
+    getUserDetails();
+  };
+
   return {
     projectListData: data,
+    filteredProjects,
     isLoading,
     isAbleToAddProject,
     addProject,
@@ -84,6 +110,9 @@ const useManageProject = () => {
     accountName,
     setSelectedProject,
     addUserToProject,
+    searchQuery,
+    setSearchQuery,
+    onRefresh,
   };
 };
 
