@@ -20,7 +20,9 @@
       "runtimeVersion": {
         "policy": "appVersion"
       },
-      "package": "com.dhrumil09.teamsync"
+      "package": "com.dhrumil09.teamsync",
+      
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
