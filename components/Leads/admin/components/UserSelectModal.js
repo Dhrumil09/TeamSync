@@ -40,8 +40,9 @@ const UserSelectModal = ({
         </Text>
       </View>
       <View style={styles.userInfo}>
+        {console.log("item", item)}
         <Text style={styles.userName}>{item.userName}</Text>
-        <Text style={styles.userRole}>Sales Executive</Text>
+        <Text style={styles.userRole}>{item?.role}</Text>
       </View>
       {selectedUserId === item.userId && (
         <Feather name="check" size={20} color="#2E7D32" />

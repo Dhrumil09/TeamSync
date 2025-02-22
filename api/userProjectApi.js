@@ -19,7 +19,6 @@ export const userProjectApi = createApi({
   endpoints: (builder) => ({
     getUserProjects: builder.query({
       query: (params) => {
-        console.log("params", params);
         return {
           url: `${endPoints.userProjects(params?.userId)}`,
           method: "GET",

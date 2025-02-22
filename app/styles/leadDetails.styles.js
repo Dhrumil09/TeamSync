@@ -426,4 +426,13 @@ export const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  metaCardDivider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 15,
+    width: "100%",
+  },
+  noteHeader: {
+    marginTop: 5,
+  },
 });

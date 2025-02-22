@@ -5,7 +5,6 @@ import { setSelectProject } from "../../../../store/slices/userSlice";
 const useManageDashboard = () => {
   const userDetails = useSelector((state) => state.user.userDetails);
   const selectedProject = useSelector((state) => state.user.selectedProject);
-  console.log("userDetails 23", userDetails, userDetails?.userId);
   const { data, isLoading, isError } = useGetUserProjectsQuery({
     userId: userDetails?.userId,
   });

@@ -20,7 +20,9 @@ import useManageProjects from "./hooks/useManageProject";
 import useHandleUserModal from "./hooks/useHandleUserModal";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import UserSelectionModal from "./componets/UserModal";
-
+import { useRouter } from "expo-router"; // Add this import at the top with other imports
+import { useDispatch } from "react-redux";
+import { setShareLeadFilterProject } from "../../../store/slices/helperSlice";
 const getStatusColor = (status) => {
   switch (status?.toUpperCase()) {
     case "ACTIVE":
@@ -37,6 +39,8 @@ const getStatusColor = (status) => {
 };
 
 export default function Tab() {
+  const router = useRouter();
+  const dispatch = useDispatch();
   const {
     projectListData,
     filteredProjects,
@@ -156,8 +160,17 @@ export default function Tab() {
 
     return (
       <View style={styles.projectListContainer}>
+        {console.log("filteredProjects", filteredProjects)}
         {filteredProjects.map((project, index) => (
-          <View key={index}>
+          <TouchableOpacity
+            key={index}
+            onPress={() => {
+              dispatch(setShareLeadFilterProject(project));
+              router.push({
+                pathname: "client/(tabs)/leads",
+              });
+            }}
+          >
             <View style={styles.projectListItem}>
               <View style={styles.projectInfo}>
                 <View style={styles.statusIndicator}>
@@ -191,7 +204,7 @@ export default function Tab() {
             {index !== filteredProjects.length - 1 && (
               <View style={styles.divider} />
             )}
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     );

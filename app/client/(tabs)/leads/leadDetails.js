@@ -301,36 +301,50 @@ const LeadDetails = () => {
                 </View>
               </View>
 
+              {/* Combined Rating and Notes Card */}
               {(leadData.rating > 0 || leadData.note) && (
                 <View style={styles.metaCardsContainer}>
-                  {leadData.rating > 0 && (
-                    <View style={styles.metaCard}>
-                      <View style={styles.metaCardHeader}>
-                        <Text style={styles.metaCardTitle}>Rating</Text>
-                      </View>
-                      <View style={styles.ratingStars}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Ionicons
-                            key={star}
-                            name={
-                              star <= leadData.rating ? "star" : "star-outline"
-                            }
-                            size={16}
-                            color="#F6461A"
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  <View style={styles.metaCard}>
+                    {leadData.rating > 0 && (
+                      <>
+                        <View style={styles.metaCardHeader}>
+                          <Text style={styles.metaCardTitle}>Rating</Text>
+                        </View>
+                        <View style={styles.ratingStars}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Ionicons
+                              key={star}
+                              name={
+                                star <= leadData.rating
+                                  ? "star"
+                                  : "star-outline"
+                              }
+                              size={16}
+                              color="#F6461A"
+                            />
+                          ))}
+                        </View>
+                      </>
+                    )}
 
-                  {leadData.note && (
-                    <View style={styles.metaCard}>
-                      <View style={styles.metaCardHeader}>
-                        <Text style={styles.metaCardTitle}>Notes</Text>
-                      </View>
-                      <Text style={styles.noteText}>{leadData.note}</Text>
-                    </View>
-                  )}
+                    {leadData.rating > 0 && leadData.note && (
+                      <View style={styles.metaCardDivider} />
+                    )}
+
+                    {leadData.note && (
+                      <>
+                        <View
+                          style={[
+                            styles.metaCardHeader,
+                            leadData.rating > 0 && styles.noteHeader,
+                          ]}
+                        >
+                          <Text style={styles.metaCardTitle}>Notes</Text>
+                        </View>
+                        <Text style={styles.noteText}>{leadData.note}</Text>
+                      </>
+                    )}
+                  </View>
                 </View>
               )}
             </>
@@ -503,19 +517,17 @@ const LeadDetails = () => {
 
             <View style={styles.communicationButtonsContainer}>
               <TouchableOpacity
-                onPress={() => Linking.openURL("sms:8866859661")}
+                onPress={() => Linking.openURL(`sms:${leadData?.phoneNumber}`)}
               >
                 <Ionicons name="chatbubble-outline" size={35} color="black" />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() =>
-                  Linking.openURL("mailto:dhrumil.shah.9798@gmail.com")
-                }
+                onPress={() => Linking.openURL(`mailto: ${leadData?.emailId}`)}
               >
                 <Ionicons name="mail-outline" size={35} color="black" />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => Linking.openURL("tel:8866859661")}
+                onPress={() => Linking.openURL(`tel:${leadData?.phoneNumber}`)}
               >
                 <Ionicons name="call-outline" size={35} color="black" />
               </TouchableOpacity>

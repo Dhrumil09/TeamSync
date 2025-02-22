@@ -36,7 +36,6 @@ export default function Tab() {
       }
     }
   }, [projectData]);
-  console.log("userDetails", userDetails);
   const addNewProject = () => {
     setFormError({ projectName: "" });
     if (newProject.trim() === "") {
@@ -53,8 +52,14 @@ export default function Tab() {
       <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
       <View style={styles.header}>
-        <AppIcon />
-        <View style={{ flex: 1, marginLeft: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <AppIcon />
+          <Text style={styles.appTitle}>
+            {`Hello, ${userDetails?.userName?.split(" ")[0]}`}
+          </Text>
+        </View>
+
+        <View>
           {projectData?.length > 1 ? (
             <SelectDropdown
               data={projectData}
@@ -136,6 +141,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
     alignItems: "center",
@@ -148,9 +154,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   appTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#151E26",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
+    marginLeft: 13,
   },
   addButton: {
     backgroundColor: "#F6461A",

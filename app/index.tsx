@@ -35,8 +35,8 @@ export default function SignInScreen() {
   const isNavigationReady = useIsNavigationReady(); // Ensure navigation is ready
   const dispatch = useDispatch();
   const  {getUserDetails}  = useGetUserDetails();
-  const [email, setEmail] = useState(user[2]);
-  const [password, setPassword] = useState("test");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginApi, { isLoading, isSuccess }] = useLoginMutation();
@@ -83,7 +83,6 @@ useEffect(() => {
       try {
         const response = await loginApi({ username: email, password }).unwrap();
 
-        console.log("Login Success:", response);
 
         // Perform actions based on user type
         if (response?.role === "ADMIN") {
@@ -111,7 +110,6 @@ useEffect(() => {
         }
       } catch (error) {
         // Handle API errors
-        console.log("Login Error:", error);
 
         // Show a user-friendly message
         const errorMessage =

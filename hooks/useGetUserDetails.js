@@ -12,7 +12,6 @@ const useGetUserDetails = () => {
   const getUserDetails = async () => {
     try {
       const response = await getUserProfile(userDetails?.userId);
-      console.log("response", response);
       if (response?.role === "ADMIN") {
         dispatch(
           login({

@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   isDisconnectModalOpen: false,
   isNetworkScreenRefresh: false,
+  shareLeadFilterProject: {},
 };
 
 const helperSlice = createSlice({
@@ -15,9 +16,15 @@ const helperSlice = createSlice({
     setIsNetworkScreenRefresh(state, action) {
       state.isNetworkScreenRefresh = action.payload;
     },
+    setShareLeadFilterProject(state, action) {
+      state.shareLeadFilterProject = action.payload;
+    },
   },
 });
 
-export const { setIsDisconnectModalOpen, setIsNetworkScreenRefresh } =
-  helperSlice.actions;
+export const {
+  setIsDisconnectModalOpen,
+  setIsNetworkScreenRefresh,
+  setShareLeadFilterProject,
+} = helperSlice.actions;
 export default helperSlice.reducer;

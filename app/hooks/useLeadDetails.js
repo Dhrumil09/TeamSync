@@ -29,7 +29,6 @@ export const useLeadDetails = (leadId) => {
   const dispatch = useDispatch();
   const leads = useSelector((state) => state.leadList.leads);
 
-  console.log("Lead Status List:", leadStatusList, leadList);
   const isInitialMount = useRef(true);
   const updateLeadList = (params) => {
     console.log("Updating lead list:", params);

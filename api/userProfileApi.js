@@ -19,7 +19,6 @@ export const userProfileApi = createApi({
   endpoints: (builder) => ({
     updateAdminAccount: builder.mutation({
       query: (payload) => {
-        console.log("API payload:", payload); // Debug log
         return {
           url: `${endPoints.accounts}/${payload.accountId}`, // API endpoint
           method: "PATCH",

@@ -3,7 +3,7 @@ import {
   useGetLeadListMutation,
   useAddLeadMutation,
   useAssignUserToLeadMutation,
-  useImportLeadsMutation, // Add this import at the top
+  useImportLeadsMutation,
 } from "../../../../api/manageAdminLeads";
 import { useEffect, useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
@@ -11,9 +11,17 @@ import { Alert, Platform } from "react-native";
 import debounce from "lodash.debounce";
 import { useListProjectsApiQuery } from "../../../../api/manageProjects";
 import { FontAwesome } from "@expo/vector-icons";
-import { use } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigation } from "expo-router";
+import { setShareLeadFilterProject } from "../../../../store/slices/helperSlice";
 
 const useManageLeads = () => {
+  const navigation = useNavigation();
+  const focused = navigation.isFocused();
+  const dispatch = useDispatch();
+  const selectedHomeProject = useSelector(
+    (state) => state.helper.shareLeadFilterProject
+  );
   const userDetails = useSelector((state) => state.user.userDetails);
   const [getLeadList, { isLoading }] = useGetLeadListMutation();
   const [addLeadApi, { isLoading: isAddLeadLoading }] = useAddLeadMutation();
@@ -60,6 +68,32 @@ const useManageLeads = () => {
       [key]: value,
     }));
   };
+
+  useEffect(() => {
+    const initializeFilters = async () => {
+      try {
+        if (focused) {
+          if (selectedHomeProject?.projectId) {
+            setSelectedFilterProject(selectedHomeProject);
+            setTempFilters((prev) => ({
+              ...prev,
+              projectId: selectedHomeProject?.projectId || "",
+            }));
+            setFilters((prev) => ({
+              ...prev,
+              projectId: selectedHomeProject?.projectId || "",
+            }));
+            await refetchLeadsWithFilters(tempFilters);
+            dispatch(setShareLeadFilterProject({}));
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing filters:", error);
+      }
+    };
+
+    initializeFilters();
+  }, [focused]);
 
   const clearFilter = async (key) => {
     const newFilters = {
@@ -356,7 +390,6 @@ const useManageLeads = () => {
             }
           : lead
       );
-      console.log("updatedLeads", updatedLeads);
       setLeads(updatedLeads);
 
       Alert.alert("Success", "Lead assigned successfully!", [{ text: "OK" }]);
