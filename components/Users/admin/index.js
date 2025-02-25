@@ -14,12 +14,14 @@ import {
   ActivityIndicator,
   RefreshControl,
   Switch, // Add this import
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
 import { Feather } from "@expo/vector-icons"; // Add this import
 import useHandleUsers from "./hooks/useHandleUsers";
 import SelectDropdown from "react-native-select-dropdown";
+import moment from "moment";
 import { styles } from "./style";
 
 const EmptyState = ({ hasActiveFilters }) => (
@@ -133,6 +135,30 @@ export default function Tab() {
       userType: "",
     });
   };
+
+  const renderUserCard = ({ item }) => (
+    <TouchableOpacity style={styles.userCard}>
+      <View style={styles.userCardContent}>
+        <View style={styles.userCardHeader}>
+          <View style={styles.headerRow}>
+            <Text style={styles.userName}>{item.userName}</Text>
+            <Text style={styles.userDate}>
+              {moment(item.createdDate).fromNow()}
+            </Text>
+          </View>
+          <View style={styles.secondRow}>
+            <Text style={styles.userRole}>{item.role}</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => openModal(item)}
+            >
+              <Feather name="edit-2" size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   const validateInputs = () => {
     const errors = {};
@@ -321,7 +347,15 @@ export default function Tab() {
                 }
               />
             ) : (
-              <ScrollView
+              <FlatList
+                data={users}
+                renderItem={renderUserCard}
+                keyExtractor={(item) => item?.userId?.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.flatListContent,
+                  users.length === 0 && styles.emptyListContent,
+                ]}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}
@@ -330,44 +364,16 @@ export default function Tab() {
                     tintColor="#F6461A"
                   />
                 }
-                onScroll={({ nativeEvent }) => {
-                  const { layoutMeasurement, contentOffset, contentSize } =
-                    nativeEvent;
-                  const isCloseToBottom =
-                    layoutMeasurement.height + contentOffset.y >=
-                    contentSize.height - 20;
-
-                  if (isCloseToBottom && hasMoreData && !isLoadingMore) {
-                    loadMoreUsers();
-                  }
-                }}
-                scrollEventThrottle={400}
-              >
-                <View style={styles.userListContainer}>
-                  {users.map((user) => (
-                    <View key={user?.userId} style={styles.card}>
-                      <View style={styles.cardContent}>
-                        <Text style={styles.cardUserName}>{user.userName}</Text>
-                        <Text style={styles.cardPhoneNumber}>
-                          {user.phoneNumber}
-                        </Text>
-                        <Text style={styles.cardUserType}>({user.role})</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => openModal(user)}
-                      >
-                        <Icon name="pencil" size={24} color="#F6461A" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                  {isLoadingMore && (
+                onEndReached={loadMoreUsers}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  isLoadingMore && (
                     <View style={styles.loadingMoreContainer}>
                       <ActivityIndicator size="small" color="#F6461A" />
                     </View>
-                  )}
-                </View>
-              </ScrollView>
+                  )
+                }
+              />
             )}
           </>
         )}
@@ -383,7 +389,6 @@ export default function Tab() {
               <TouchableWithoutFeedback>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>
-                    {console.log("editingUserId", editingUserId)}
                     {editingUserId ? "Edit User" : "Add New User"}
                   </Text>
 

@@ -187,24 +187,17 @@ export const styles = StyleSheet.create({
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "transparent", // Changed from white to transparent
   },
   searchInputWrapper: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: "#F5F5F5", // Changed from white to light gray
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E0E0E0",
     marginRight: 8,
-  },
-  searchIcon: {
-    padding: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 14,
   },
   filterButton: {
     padding: 8,
@@ -234,11 +227,6 @@ export const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
   },
   modalFilterSection: {
     marginBottom: 16,
@@ -256,15 +244,15 @@ export const styles = StyleSheet.create({
     padding: 8,
   },
   chipScrollView: {
-    maxHeight: 50, // Increased from 40
+    maxHeight: 50,
     paddingHorizontal: 12,
-
-    // marginBottom: 8,
+    backgroundColor: "transparent", // Added transparent background
   },
   chipScrollContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: 16, // Add padding to prevent last chip from being cut off
+    paddingRight: 16,
+    backgroundColor: "transparent", // Added transparent background
   },
   chipContainer: {
     flexDirection: "row",
@@ -361,10 +349,21 @@ export const styles = StyleSheet.create({
   },
   flatListContent: {
     flexGrow: 1,
+    paddingBottom: 130, // Increased padding to account for FAB and extra space
   },
   emptyListContent: {
     flex: 1,
     justifyContent: "center",
+  },
+  userCard: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "white",
+    marginVertical: 0,
+  },
+  userCardContent: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
   passwordContainer: {
     flexDirection: "row",
@@ -393,5 +392,48 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000",
     marginHorizontal: 8,
+  },
+  userCard: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "white",
+    marginVertical: 0,
+  },
+  userCardContent: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  userCardHeader: {
+    // marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  userName: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    fontWeight: "600",
+    color: "#151E26",
+  },
+  userDate: {
+    fontSize: 14,
+    lineHeight: 16,
+    fontWeight: "300",
+    fontStyle: "italic",
+    color: "#666",
+  },
+  secondRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  userRole: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    color: "#666",
+    fontStyle: "italic",
   },
 });

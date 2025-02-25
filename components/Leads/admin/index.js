@@ -14,10 +14,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   Switch,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
-import { Feather, FontAwesome } from "@expo/vector-icons"; // Add FontAwesome import
+import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons"; // Add FontAwesome and Ionicons import
 import { router } from "expo-router";
 import moment from "moment";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
@@ -99,6 +100,7 @@ const AdminLeads = () => {
     selectedProject,
     setSelectedFile,
     isImporting,
+    leadStatus,
   } = useManageLeads();
 
   // const {
@@ -164,29 +166,63 @@ const AdminLeads = () => {
   const renderData = ({ item }) => (
     <TouchableOpacity
       style={styles.leadContainer}
-      onPress={() => router.push("client/leads/leadDetails?id=" + item?.leadId)}
+      onPress={() => router.push(`client/leads/leadDetails?id=${item?.leadId}`)}
     >
       <View style={styles.leadContent}>
         <View style={styles.leadHeader}>
-          <Text style={styles.leadName}>{item.leadName}</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <View style={styles.rowAlign}>
-            <Feather name="phone" size={16} color="black" />
-            <Text style={styles.phoneNumber}>{item.phoneNumber}</Text>
-          </View>
-          <Text>{`Status: ${item.status}`}</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <Text>{`Rating: ${item.rating}`}</Text>
-          <Text>
-            <Text style={styles.addedOnText}>{`Added on `}</Text>
+          <View style={styles.headerRow}>
+            <View style={styles.leftContent}>
+              <Text style={styles.leadStatus}>{item.status}</Text>
+              <Text style={styles.leadName}>{item.leadName}</Text>
+            </View>
             <Text style={styles.dateText}>
-              {moment(item.createdDate).format("MM/DD/YYYY")}
+              {moment(item.createdDate).format("DD MMM'YY")}
             </Text>
-          </Text>
+          </View>
+          <View style={styles.secondRow}>
+            {item.assignedToUserName ? (
+              <Text style={styles.assignedUserName}>
+                {item.assignedToUserName}
+              </Text>
+            ) : (
+              <Text style={styles.unassignedText}>Unassigned</Text>
+            )}
+            <View style={styles.communicationIcons}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => {
+                  setSelectedLead(item);
+                  setUserModalVisible(true);
+                }}
+              >
+                <Ionicons name="person-add-outline" size={24} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => {
+                  const urlWA = `whatsapp://send?phone=${item.phoneNumber}`;
+                  Linking.canOpenURL(urlWA).then((supported) => {
+                    if (supported) {
+                      Linking.openURL(urlWA);
+                    } else {
+                      Alert.alert(
+                        "Please install WhatsApp to use this feature"
+                      );
+                    }
+                  });
+                }}
+              >
+                <Ionicons name="logo-whatsapp" size={24} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => Linking.openURL(`tel:${item.phoneNumber}`)}
+              >
+                <Ionicons name="call-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-        {renderAssignedUser(item)}
       </View>
     </TouchableOpacity>
   );
@@ -690,7 +726,7 @@ const AdminLeads = () => {
             <View style={styles.modalFilterSection}>
               <Text style={styles.filterLabel}>Lead Status</Text>
               <SelectDropdown
-                data={["New", "In Progress", "Completed"]}
+                data={leadStatus}
                 onSelect={(value) => {
                   updateFilter("leadStatus", value);
                   setSelectedStatus(value);

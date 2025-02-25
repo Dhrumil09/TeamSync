@@ -11,11 +11,18 @@ import debounce from "lodash.debounce";
 import { useListProjectsApiQuery } from "../../../../api/manageProjects";
 import { FontAwesome } from "@expo/vector-icons";
 import { useFetchLeadStatusQuery } from "../../../../api/manageAdminLeads";
-import { use } from "react";
-
+import { useGetUserProjectsQuery } from "../../../../api/userProjectApi";
 const useManageLeads = () => {
   const userDetails = useSelector((state) => state.user.userDetails);
   const selectedProject = useSelector((state) => state.user.selectedProject);
+
+  const {
+    data: projectData,
+    isLoading: projectLoading,
+    isError,
+  } = useGetUserProjectsQuery({
+    userId: userDetails?.userId,
+  });
   const [getLeadList, { isLoading }] = useGetLeadListMutation();
   const [addLeadApi, { isLoading: isAddLeadLoading }] = useAddLeadMutation();
   const { data: leadStatus } = useFetchLeadStatusQuery();
@@ -352,9 +359,10 @@ const useManageLeads = () => {
     userModalVisible,
     setUserModalVisible,
     handleAssignUser,
-
+    projectData,
     userDetails,
     leadStatus,
+    selectedProject,
   };
 };
 

@@ -5,19 +5,19 @@ import {
   FlatList,
   TouchableOpacity,
   Text,
-  StyleSheet,
   Modal,
   TextInput,
-  Button,
-  Alert,
   ScrollView,
   ActivityIndicator,
   RefreshControl,
   Switch,
+  Linking,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as DocumentPicker from "expo-document-picker";
-import { Feather, FontAwesome } from "@expo/vector-icons"; // Add FontAwesome import
+import { useDispatch } from "react-redux";
+import { setSelectProject } from "../../../store/slices/userSlice";
+import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons"; // Add FontAwesome and Ionicons import
 import { router } from "expo-router";
 import moment from "moment";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
@@ -25,6 +25,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useManageUserLeads from "./hooks/useManageUserLeads";
 import SelectDropdown from "react-native-select-dropdown";
 import { styles } from "./style";
+import AppIcon from "../../../assets/images/AppIcon";
 
 const EmptyState = ({ hasActiveFilters }) => (
   <View style={styles.emptyContainer}>
@@ -53,7 +54,7 @@ const LoadingState = () => (
 
 const AdminLeads = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedLead, setSelectedLead] = useState(null);
+  const dispatch = useDispatch();
   const {
     leads,
     isLoading,
@@ -61,7 +62,6 @@ const AdminLeads = () => {
     fetchNextPage,
     searchText,
     setSearchText,
-    openModal,
     projectsData,
     handleAssignUser,
     filters,
@@ -76,9 +76,10 @@ const AdminLeads = () => {
     setSelectedFilterProject,
     tempFilters,
     applyFilters,
-    setUserModalVisible,
     userDetails,
     leadStatus,
+    projectData,
+    selectedProject,
   } = useManageUserLeads();
 
   // const {
@@ -128,32 +129,75 @@ const AdminLeads = () => {
     </View>
   );
 
-  const renderData = ({ item }) => (
+  const formatDate = (date) => {
+    const today = moment().startOf("day");
+    const yesterday = moment().subtract(1, "day").startOf("day");
+    const dateToCheck = moment(date).startOf("day");
+
+    if (dateToCheck.isSame(today)) {
+      return "Today";
+    } else if (dateToCheck.isSame(yesterday)) {
+      return "Yesterday";
+    } else {
+      // For February 22nd, 2024, this will return: "22 Feb'24"
+      return moment(date).format("DD MMM'YY");
+    }
+  };
+
+  const renderData = ({ item, index }) => (
     <TouchableOpacity
-      style={styles.leadContainer}
-      onPress={() => router.push("client/leads/leadDetails?id=" + item?.leadId)}
+      style={[
+        styles.leadContainer,
+        index === leads.length - 1 && styles.lastItem,
+      ]}
+      onPress={() => router.push(`client/leads/leadDetails?id=${item?.leadId}`)}
     >
       <View style={styles.leadContent}>
         <View style={styles.leadHeader}>
-          <Text style={styles.leadName}>{item.leadName}</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <View style={styles.rowAlign}>
-            <Feather name="phone" size={16} color="black" />
-            <Text style={styles.phoneNumber}>{item.phoneNumber}</Text>
+          <View style={styles.headerRow}>
+            <View style={styles.leftContent}>
+              <Text style={styles.leadStatus}>{item.status}</Text>
+              <Text style={styles.leadName}>{item.leadName}</Text>
+            </View>
+            <Text style={styles.dateText}>{formatDate(item.createdDate)}</Text>
           </View>
-          <Text>{`Status: ${item.status}`}</Text>
+          <View style={styles.secondRow}>
+            {item.assignedToUserName ? (
+              <Text style={styles.assignedUserName}>
+                {item.assignedToUserName}
+              </Text>
+            ) : (
+              <TouchableOpacity onPress={() => handleAssignUser(item.leadId)}>
+                <Text style={styles.unassignedLink}>Assign to me</Text>
+              </TouchableOpacity>
+            )}
+            <View style={styles.communicationIcons}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => {
+                  const urlWA = `whatsapp://send?phone=${item.phoneNumber}`;
+                  Linking.canOpenURL(urlWA).then((supported) => {
+                    if (supported) {
+                      Linking.openURL(urlWA);
+                    } else {
+                      Alert.alert(
+                        "Please install WhatsApp to use this feature"
+                      );
+                    }
+                  });
+                }}
+              >
+                <Ionicons name="logo-whatsapp" size={24} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => Linking.openURL(`tel:${item.phoneNumber}`)}
+              >
+                <Ionicons name="call-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-        <View style={styles.rowBetween}>
-          <Text>{`Rating: ${item.rating}`}</Text>
-          <Text>
-            <Text style={styles.addedOnText}>{`Added on `}</Text>
-            <Text style={styles.dateText}>
-              {moment(item.createdDate).format("MM/DD/YYYY")}
-            </Text>
-          </Text>
-        </View>
-        {renderAssignedUser(item)}
       </View>
     </TouchableOpacity>
   );
@@ -251,11 +295,53 @@ const AdminLeads = () => {
       <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
       <View style={styles.header}>
-        <Text
-          style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
-        >
-          Leads
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <AppIcon />
+          <Text style={styles.appTitle}>{`Leads `}</Text>
+        </View>
+
+        <View>
+          {projectData?.length > 1 ? (
+            <SelectDropdown
+              data={projectData}
+              statusBarTranslucent={true}
+              onSelect={(selectedItem) => {
+                dispatch(setSelectProject(selectedItem));
+              }}
+              defaultValue={selectedProject}
+              renderButton={(selectedItem, isOpened) => (
+                <View style={styles.dropdownButtonStyle}>
+                  <Text style={styles.dropdownButtonTxtStyle}>
+                    {(selectedItem && selectedItem?.projectName) ||
+                      "Select Project"}
+                  </Text>
+                  <Icon
+                    name={isOpened ? "chevron-up" : "chevron-down"}
+                    style={styles.dropdownButtonArrowStyle}
+                  />
+                </View>
+              )}
+              renderItem={(item, index, isSelected) => (
+                <View
+                  style={{
+                    ...styles.dropdownItemStyle,
+                    ...(isSelected && { backgroundColor: "#D2D9DF" }),
+                  }}
+                >
+                  <Text style={styles.dropdownItemTxtStyle}>
+                    {item?.projectName}
+                  </Text>
+                </View>
+              )}
+              showsVerticalScrollIndicator={false}
+              dropdownStyle={styles.dropdownMenuStyle}
+            />
+          ) : (
+            <Text style={styles.singleProjectText}>
+              {selectedProject?.projectName || "No Project"}
+            </Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.searchFilterContainer}>

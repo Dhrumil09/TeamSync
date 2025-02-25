@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import AdminProfile from "../../../components/profile/admin";
 import UserProfile from "../../../components/profile/user";
-
+import AppIcon from "../../../assets/images/AppIcon";
 export default function Tab() {
   const userType = useSelector((state) => state.user.userType);
 
@@ -12,11 +12,10 @@ export default function Tab() {
       <View style={styles.container}>
         <StatusBar translucent />
         <View style={styles.header}>
-          <Text
-            style={{ fontSize: 16, fontWeight: "bold", alignContent: "center" }}
-          >
-            Profile
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <AppIcon />
+            <Text style={styles.appTitle}>{`Profile `}</Text>
+          </View>
         </View>
         {userType === "admin" ? <AdminProfile /> : <UserProfile />}
       </View>
@@ -32,16 +31,24 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
     alignItems: "center",
     paddingBottom: 5,
     backgroundColor: "#fff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 7 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    justifyContent: "center",
+    minHeight: 53,
+  },
+
+  appTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
+    marginLeft: 13,
   },
 });

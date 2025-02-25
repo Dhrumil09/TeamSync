@@ -127,6 +127,7 @@ useEffect(() => {
         <AppIcon />
       </View>
       <View style={styles.formContainer}>
+        <Text style={styles.loginTitle}>Login</Text>
         <View style={styles.inputContainer}>
           <TextInput
             placeholder="Email"
@@ -179,10 +180,14 @@ useEffect(() => {
           <Text style={styles.googleButtonText}>Sign in with Google</Text>
         </TouchableOpacity>
       </View> */}
-      <Button
-        title="Don't have an account? Sign Up"
-        onPress={() => router.push("/signup")}
-      />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={styles.signUpButton}
+          onPress={() => router.push("/signup")}
+        >
+          <Text style={styles.signUpButtonText}>Create an Account</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -192,9 +197,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingVertical: 50,
+    backgroundColor: '#FFFFFF',
   },
   iconContainer: {
     marginBottom: 50,
+    alignItems: 'center', // Center the icon and title
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 16, // Add space between title and input
   },
   formContainer: {
     width: "90%",
@@ -222,7 +235,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   loginButton: {
-    backgroundColor: "#F6461A",
+    backgroundColor: "#387ED1", // Changed from #F6461A to #387ED1
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -243,5 +256,24 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginRight: 8,
+  },
+  signUpButton: {
+    borderColor: "#387ED1",
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    flexDirection: "row",
+    backgroundColor: 'transparent',
+  },
+  signUpButtonText: {
+    color: "#000000",
+    fontSize: 14,
+    lineHeight: 21,
+    letterSpacing: -0.23,
+    fontWeight: "500",
+    fontFamily: "Inter-Regular",
+    paddingVertical: 10,
   },
 });

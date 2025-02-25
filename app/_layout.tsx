@@ -16,7 +16,7 @@ export default function RootLayout() {
             name="index"
             options={{
               headerTitle: 'Login',
-              headerShown: true,
+              headerShown: false,
               headerBackVisible: false,
             }}
           />
@@ -24,7 +24,7 @@ export default function RootLayout() {
             name="signup"
             options={{
               headerTitle: 'Sign Up',
-              headerShown: true,
+              headerShown: false,
               headerBackVisible: false,
             }}
           />

@@ -23,6 +23,7 @@ import UserSelectionModal from "./componets/UserModal";
 import { useRouter } from "expo-router"; // Add this import at the top with other imports
 import { useDispatch } from "react-redux";
 import { setShareLeadFilterProject } from "../../../store/slices/helperSlice";
+import moment from "moment"; // Add this import at the top
 const getStatusColor = (status) => {
   switch (status?.toUpperCase()) {
     case "ACTIVE":
@@ -38,7 +39,7 @@ const getStatusColor = (status) => {
   }
 };
 
-export default function Tab() {
+const Tab = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const {
@@ -210,18 +211,99 @@ export default function Tab() {
     );
   };
 
+  const formatDate = (date) => {
+    const today = moment().startOf("day");
+    const yesterday = moment().subtract(1, "day").startOf("day");
+    const dateToCheck = moment(date).startOf("day");
+
+    if (dateToCheck.isSame(today)) {
+      return "Today";
+    } else if (dateToCheck.isSame(yesterday)) {
+      return "Yesterday";
+    } else {
+      return moment(date).format("DD MMM'YY");
+    }
+  };
+
+  const renderData = (project) => (
+    <TouchableOpacity
+      key={project.projectId}
+      style={styles.projectCard}
+      onPress={() => {
+        dispatch(setShareLeadFilterProject(project));
+        router.push({ pathname: "client/(tabs)/leads" });
+      }}
+    >
+      <View style={styles.cardContent}>
+        {/* First Row: Status and Date */}
+        <View style={styles.headerRow}>
+          <Text style={styles.projectStatus}>{project.status}</Text>
+          <Text style={styles.dateText}>{formatDate(project.createdDate)}</Text>
+        </View>
+
+        {/* Second Row: Name and Actions */}
+        <View style={styles.secondRow}>
+          <Text style={styles.projectName}>{project.projectName}</Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                openEditModal(project);
+              }}
+            >
+              <Icon name="pencil" size={24} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                addUserModal(project);
+              }}
+            >
+              <MaterialIcons name="person-add" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <SafeAreaView edges={["top"]} style={{ backgroundColor: "#FFF" }} />
       <StatusBar translucent />
       <View style={styles.header}>
-        <AppIcon />
-        <View style={{ flex: 1, marginLeft: 16 }}>
-          <Text style={styles.appTitle}>{accountName}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <AppIcon />
+          <Text style={styles.appTitle}>Projects</Text>
         </View>
       </View>
 
-      {renderSearchBar()}
+      <View style={styles.searchFilterContainer}>
+        <View style={styles.searchInputContainer}>
+          <Icon
+            name="magnify"
+            size={20}
+            color="#666"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search projects"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery ? (
+            <TouchableOpacity
+              style={styles.clearSearchButton}
+              onPress={() => setSearchQuery("")}
+            >
+              <Icon name="close" size={20} color="#666" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
 
       <ScrollView
         refreshControl={
@@ -238,7 +320,9 @@ export default function Tab() {
             Projects ({filteredProjects?.length || 0})
           </Text>
         )}
-        {renderProjectList()}
+        <View style={styles.projectListContainer}>
+          {filteredProjects?.map((project) => renderData(project))}
+        </View>
       </ScrollView>
 
       <TouchableOpacity
@@ -395,7 +479,7 @@ export default function Tab() {
       )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -404,6 +488,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
     alignItems: "center",
@@ -416,9 +501,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   appTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#151E26",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
+    marginLeft: 13,
   },
   addButton: {
     backgroundColor: "#F6461A",
@@ -430,16 +516,10 @@ const styles = StyleSheet.create({
   },
   projectListContainer: {
     marginTop: 16,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: "#F9F9F9",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginHorizontal: 0, // Remove horizontal margin
+    backgroundColor: "#FFF",
+    paddingVertical: 0, // Remove vertical padding
+    paddingHorizontal: 0, // Remove horizontal padding
   },
   projectListItem: {
     paddingVertical: 12,
@@ -598,6 +678,7 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     marginRight: 8,
+    marginLeft: 4,
   },
   searchInput: {
     flex: 1,
@@ -682,4 +763,85 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
   },
+  searchFilterContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginVertical: 16,
+    gap: 8,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    overflow: "hidden",
+  },
+  clearSearchButton: {
+    padding: 8,
+    marginRight: 4,
+    backgroundColor: "#F5F5F5",
+  },
+  projectCard: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "white",
+    marginVertical: 0,
+  },
+  cardContent: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    // marginBottom: 8,
+  },
+  projectStatus: {
+    fontSize: 10,
+    lineHeight: 12.1,
+    fontWeight: "500",
+    fontStyle: "italic",
+    color: "#666",
+  },
+  dateText: {
+    fontSize: 10,
+    lineHeight: 12.1,
+    color: "#666",
+    fontStyle: "italic",
+  },
+  secondRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  projectName: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    fontWeight: "600",
+    color: "#151E26",
+  },
+  iconButton: {
+    marginLeft: 16,
+    padding: 4,
+  },
+  statusDateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 3,
+  },
+  dateText: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    fontWeight: "300",
+    letterSpacing: 0,
+    color: "#000000",
+    fontStyle: "italic",
+  },
 });
+export default Tab;

@@ -3,20 +3,21 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FFF",
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
     alignItems: "center",
     paddingBottom: 5,
     backgroundColor: "#fff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 7 },
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    justifyContent: "center",
   },
   searchFilterContainer: {
     flexDirection: "row",
@@ -24,12 +25,13 @@ export const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 16,
     gap: 8,
+    backgroundColor: "transparent", // Remove white background
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#F5F5F5", // Changed from white to light gray
     borderRadius: 8,
     marginRight: 8,
   },
@@ -38,12 +40,10 @@ export const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 12,
     fontSize: 14,
-    backgroundColor: "white", // Match container background
   },
   clearSearchButton: {
     padding: 8,
     marginRight: 4,
-    backgroundColor: "white", // Match container background
   },
   filterButton: {
     padding: 8,
@@ -62,21 +62,29 @@ export const styles = StyleSheet.create({
   chipScrollContent: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 4,
   },
   listContainer: {
     flex: 1,
+    backgroundColor: "#FFF",
   },
   flatListContent: {
-    paddingHorizontal: 16,
     paddingBottom: 100,
+    backgroundColor: "#FFF",
   },
   leadContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
     backgroundColor: "white",
-    marginVertical: 8,
-    borderRadius: 16,
+    marginVertical: 0,
+  },
+  lastItem: {
+    borderBottomWidth: 0, // Remove border for last item
   },
   leadContent: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: "white",
   },
   dropdownItemStyle: {
     flexDirection: "row",
@@ -90,12 +98,23 @@ export const styles = StyleSheet.create({
     color: "#151E26",
   },
   leadHeader: {
-    marginBottom: 16,
+    marginBottom: 0, // Changed from 16 to 0
   },
   leadName: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 16.94,
     fontWeight: "600",
+    letterSpacing: 0,
+    color: "#151E26",
+  },
+  leadStatus: {
+    fontSize: 10,
+    lineHeight: 12.1,
+    fontWeight: "500",
+    fontStyle: "italic",
+    letterSpacing: 0,
+    color: "#666",
+    marginBottom: 3, // Changed from 4 to 3
   },
   rowBetween: {
     flexDirection: "row",
@@ -119,8 +138,10 @@ export const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 16.94,
     fontWeight: "300",
+    letterSpacing: 0,
+    color: "#000000",
     fontStyle: "italic",
   },
   floatingButton: {
@@ -391,37 +412,16 @@ export const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     marginRight: 8,
     borderWidth: 1,
-    height: 32, // Increased height slightly
-    minWidth: 100,
   },
   chipText: {
     fontSize: 12,
     fontWeight: "500",
-    marginRight: 4,
-    flex: 1, // Add this to ensure text takes available space
-  },
-  chipLabel: {
-    fontSize: 12,
     color: "#666",
-    marginBottom: 4,
-  },
-  chipContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  chipValue: {
-    fontSize: 14,
-    color: "#151E26",
-    fontWeight: "500",
-    marginRight: 8,
-    flex: 1,
   },
   filterChipsContainer: {
     flexDirection: "row",
@@ -496,9 +496,12 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
   },
   assignedUserName: {
-    fontSize: 13,
-    color: "#2E7D32",
-    fontWeight: "500",
+    fontSize: 14,
+    lineHeight: 16.94,
+    fontWeight: "400",
+    letterSpacing: 0,
+    color: "#666",
+    fontStyle: "italic",
   },
   assignedUserRole: {
     fontSize: 11,
@@ -755,5 +758,94 @@ export const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "500",
+  },
+
+  appTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
+    marginLeft: 13,
+  },
+  dropdownButtonStyle: {
+    width: 150,
+    height: 40,
+    backgroundColor: "#E9ECEF",
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 5,
+  },
+  dropdownButtonTxtStyle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#151E26",
+  },
+  dropdownButtonArrowStyle: {
+    fontSize: 28,
+  },
+  dropdownItemStyle: {
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#E9ECEF",
+  },
+  dropdownItemTxtStyle: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: "#151E26",
+  },
+  singleProjectText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#151E26",
+    paddingVertical: 8,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 0, // Changed from 8 to 4 to reduce space between rows
+  },
+  leftContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  leadStatus: {
+    fontSize: 10,
+    lineHeight: 12.1,
+    fontWeight: "500",
+    fontStyle: "italic",
+    letterSpacing: 0,
+    color: "#666",
+    marginBottom: 3, // Changed from 4 to 3
+  },
+  secondRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+
+    marginTop: 9,
+  },
+  assignedUserName: {
+    fontSize: 14,
+    color: "#000000",
+    fontWeight: "400",
+  },
+  communicationIcons: {
+    flexDirection: "row",
+  },
+  iconButton: {
+    marginLeft: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  unassignedLink: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    color: "#F6461A", // Link color
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
 });

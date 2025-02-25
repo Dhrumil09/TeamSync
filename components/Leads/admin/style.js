@@ -3,6 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FAFAFA", // Changed from white to FAFAFA
   },
   header: {
     flexDirection: "row",
@@ -29,21 +30,24 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#F5F5F5", // Light gray background
     borderRadius: 8,
     marginRight: 8,
+    borderWidth: 1, // Add border
+    borderColor: "#E0E0E0", // Light gray border
+    overflow: "hidden", // Add this to prevent border cut off
   },
   searchInput: {
     flex: 1,
     height: 40,
     paddingHorizontal: 12,
     fontSize: 14,
-    backgroundColor: "white", // Match container background
+    backgroundColor: "#F5F5F5", // Match container background
   },
   clearSearchButton: {
     padding: 8,
     marginRight: 4,
-    backgroundColor: "white", // Match container background
+    backgroundColor: "#F5F5F5", // Match container background
   },
   filterButton: {
     padding: 8,
@@ -56,27 +60,31 @@ export const styles = StyleSheet.create({
     aspectRatio: 1,
   },
   chipScrollView: {
-    maxHeight: 40,
-    paddingHorizontal: 16,
+    maxHeight: 50,
+    paddingHorizontal: 12,
+    backgroundColor: "transparent", // Make transparent
   },
   chipScrollContent: {
     flexDirection: "row",
     alignItems: "center",
+    paddingRight: 16,
+    backgroundColor: "transparent", // Make transparent
   },
   listContainer: {
     flex: 1,
   },
   flatListContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 130, // Keep bottom padding for FAB
+    // Remove paddingHorizontal
   },
   leadContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
     backgroundColor: "white",
-    marginVertical: 8,
-    borderRadius: 16,
+    marginVertical: 0,
   },
   leadContent: {
-    padding: 16,
+    paddingVertical: 16,
   },
   dropdownItemStyle: {
     flexDirection: "row",
@@ -90,12 +98,13 @@ export const styles = StyleSheet.create({
     color: "#151E26",
   },
   leadHeader: {
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   leadName: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 16.94,
     fontWeight: "600",
+    color: "#151E26",
   },
   rowBetween: {
     flexDirection: "row",
@@ -543,9 +552,10 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
   },
   assignedUserName: {
-    fontSize: 13,
-    color: "#2E7D32",
-    fontWeight: "500",
+    fontSize: 14,
+    lineHeight: 16.94,
+    color: "#666",
+    fontStyle: "italic",
   },
   assignedUserRole: {
     fontSize: 11,
@@ -840,5 +850,47 @@ export const styles = StyleSheet.create({
 
   disabledButton: {
     opacity: 0.5,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 0,
+    paddingHorizontal: 16, // Add padding to the rows instead
+  },
+  leftContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  leadStatus: {
+    fontSize: 10,
+    lineHeight: 12.1,
+    fontWeight: "500",
+    fontStyle: "italic",
+    letterSpacing: 0,
+    color: "#666",
+    marginBottom: 3,
+  },
+  secondRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 9,
+    paddingHorizontal: 16, // Add padding to the rows instead
+  },
+  communicationIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconButton: {
+    marginLeft: 16,
+    padding: 4,
+  },
+  unassignedText: {
+    fontSize: 14,
+    lineHeight: 16.94,
+    color: "#F6461A",
+    fontWeight: "500",
+    fontStyle: "italic",
   },
 });

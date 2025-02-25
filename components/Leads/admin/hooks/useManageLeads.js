@@ -4,6 +4,7 @@ import {
   useAddLeadMutation,
   useAssignUserToLeadMutation,
   useImportLeadsMutation,
+  useFetchLeadStatusQuery,
 } from "../../../../api/manageAdminLeads";
 import { useEffect, useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
@@ -29,6 +30,7 @@ const useManageLeads = () => {
     userDetails?.remainingLeadsCreation > 0 ? true : false;
   const [assignUserToLead, { isLoading: assignUserLoading }] =
     useAssignUserToLeadMutation();
+  const { data: leadStatus } = useFetchLeadStatusQuery();
   const [importLeadsApi] = useImportLeadsMutation();
   const [page, setPage] = useState(0);
   const [lastPage, setLastPage] = useState(0);
@@ -139,7 +141,7 @@ const useManageLeads = () => {
       ),
       ...(searchText.length === 10 ? { phoneNumber: searchText } : {}),
     };
-
+    console.log("params", params);
     try {
       const data = await getLeadList(params).unwrap();
       if (data?.content) {
@@ -163,6 +165,7 @@ const useManageLeads = () => {
           Object.entries(filters).filter(([key, value]) => value !== "")
         ),
       };
+      console.log("params", filterParams);
       const res = await getLeadList(filterParams).unwrap();
       return res;
     } catch (error) {
@@ -447,6 +450,7 @@ const useManageLeads = () => {
     handleAssignUser,
     isAbleToAddLead,
     isImporting,
+    leadStatus,
   };
 };
 

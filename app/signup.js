@@ -13,6 +13,7 @@ import {
 import { router } from "expo-router";
 import { useSignUpApiMutation } from "../api/signupAPI";
 import { Ionicons } from "@expo/vector-icons";
+import AppIcon from "../assets/images/AppIcon";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
@@ -23,6 +24,7 @@ export default function SignUpScreen() {
   const [signup, { isLoading }] = useSignUpApiMutation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(true);
 
   const handleSignUp = async () => {
     // Input Validation
@@ -55,10 +57,8 @@ export default function SignUpScreen() {
         phoneNumber,
         password,
       }).unwrap();
-
-      Alert.alert("Success", "Account created successfully! Please sign in.", [
-        { text: "OK", onPress: () => router.replace("/") },
-      ]);
+      console.log("Response:", response);
+      setSignupSuccess(true);
     } catch (error) {
       // Handle API errors
       console.log("Error:", error);
@@ -70,12 +70,47 @@ export default function SignUpScreen() {
     }
   };
 
+  if (signupSuccess) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.iconContainer}>
+          <AppIcon />
+        </View>
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>
+            Thank you for creating account with us!
+          </Text>
+          <Text style={[styles.successDescription]}>
+            Please contact support team for account activation and any
+            assistance during the process.
+          </Text>
+          <View style={styles.supportContainer}>
+            <Text style={styles.supportTitle}>Contact Support</Text>
+            <Text style={styles.supportText}>Email: market@muggam.com</Text>
+            <Text style={styles.supportText}>Phone: +1 (555) 123-4567</Text>
+          </View>
+        </View>
+        <View style={styles.signInButtonContainer}>
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={() => router.replace("/")}
+          >
+            <Text style={styles.signInButtonText}>
+              Existing account? Log in
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* <View style={styles.iconContainer}>
-        <Text style={styles.title}>Sign Up</Text>
-      </View> */}
+      <View style={styles.iconContainer}>
+        <AppIcon />
+      </View>
       <View style={styles.formContainer}>
+        <Text style={styles.title}>Create new account</Text>
         <TextInput
           placeholder="Full Name"
           value={name}
@@ -153,11 +188,15 @@ export default function SignUpScreen() {
           </View>
         </TouchableOpacity>
       </View>
-      <Button
-        title="Already have an account? Sign In"
-        onPress={() => router.replace("/")}
-        disabled={isLoading}
-      />
+      <View style={styles.signInButtonContainer}>
+        <TouchableOpacity
+          style={styles.signInButton}
+          onPress={() => router.replace("/")}
+          disabled={isLoading}
+        >
+          <Text style={styles.signInButtonText}>Existing account? Log in</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -167,14 +206,16 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingVertical: 50,
+    backgroundColor: "#FFFFFF", // Add white background
   },
   iconContainer: {
-    marginBottom: 50,
+    marginBottom: 30, // Reduced from 50 to 30
+    alignItems: "center",
   },
   formContainer: {
     width: "90%",
     paddingHorizontal: 20,
-    marginTop: 30,
+    marginTop: 0, // Reduced from 30 to 0
   },
   input: {
     height: 40,
@@ -186,11 +227,17 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "90%",
     paddingHorizontal: 20,
-    marginTop: 50,
+    marginTop: 30,
+    marginBottom: 50, // Changed from 30 to 0
+  },
+  // Add specific style for the sign in button container
+  signInButtonContainer: {
+    width: "90%",
+    paddingHorizontal: 20,
     marginBottom: 30,
   },
   signUpButton: {
-    backgroundColor: "#F6461A",
+    backgroundColor: "#387ED1", // Changed from #F6461A to #387ED1
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -206,9 +253,33 @@ const styles = StyleSheet.create({
     fontFamily: "Inter-Regular",
     // paddingVertical: 10,
   },
+  signInButton: {
+    borderColor: "#387ED1", // Match the blue color
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    flexDirection: "row",
+    backgroundColor: "transparent",
+  },
+  signInButtonText: {
+    color: "#000000",
+    fontSize: 14,
+    lineHeight: 21,
+    letterSpacing: -0.23,
+    fontWeight: "500",
+    fontFamily: "Inter-Regular",
+    paddingVertical: 10,
+  },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#000000",
+    fontFamily: "Inter",
+    lineHeight: 24.2,
+    letterSpacing: 0,
+    marginBottom: 16, // Add space between title and first input
   },
   passwordContainer: {
     flexDirection: "row",
@@ -236,5 +307,46 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginRight: 8,
+  },
+  successContainer: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 60, // Increased from 40 to 60
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#000000",
+    textAlign: "center",
+    lineHeight: 32,
+    marginBottom: 60, // Increased from 40 to 60
+  },
+  successDescription: {
+    fontSize: 16,
+    color: "#666666",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 60,
+    paddingHorizontal: 40, // Added horizontal padding
+  },
+  widerText: {
+    marginHorizontal: 20, // Added horizontal margin
+    width: "100%", // Ensure text takes full width
+  },
+  supportContainer: {
+    alignItems: "center",
+    marginTop: 60, // Increased from 40 to 60
+    marginBottom: 60, // Added margin bottom
+  },
+  supportTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000000",
+    marginBottom: 16,
+  },
+  supportText: {
+    fontSize: 14,
+    color: "#666666",
+    lineHeight: 20,
   },
 });

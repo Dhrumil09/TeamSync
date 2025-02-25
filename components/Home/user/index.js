@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  TextInput,
-  Modal,
-  Alert,
-} from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SelectDropdown from "react-native-select-dropdown";
 import Icon from "@expo/vector-icons/MaterialCommunityIcons";
@@ -17,11 +7,6 @@ import AppIcon from "../../../assets/images/AppIcon";
 import useManageDashboard from "./hooks/useManageDashboard";
 
 export default function Tab() {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newProject, setNewProject] = useState("");
-  const [formError, setFormError] = useState({
-    projectName: "",
-  });
   const {
     projectData,
     userDetails,
@@ -31,21 +16,11 @@ export default function Tab() {
 
   useEffect(() => {
     if (projectData) {
-      if (projectData.length > 0) {
+      if (projectData.length > 0 && !selectedProject) {
         setSelectedProject(projectData[0]);
       }
     }
-  }, [projectData]);
-  const addNewProject = () => {
-    setFormError({ projectName: "" });
-    if (newProject.trim() === "") {
-      setFormError({ projectName: "Project name is required" });
-      return;
-    }
-    setProjectList((prevList) => [...prevList, newProject.trim()]);
-    setNewProject("");
-    setModalVisible(false);
-  };
+  }, [projectData, selectedProject]);
 
   return (
     <View style={styles.container}>
@@ -63,6 +38,7 @@ export default function Tab() {
           {projectData?.length > 1 ? (
             <SelectDropdown
               data={projectData}
+              statusBarTranslucent={true}
               onSelect={(selectedItem) => {
                 setSelectedProject(selectedItem);
               }}
@@ -159,47 +135,6 @@ const styles = StyleSheet.create({
     color: "#000000",
     marginLeft: 13,
   },
-  addButton: {
-    backgroundColor: "#F6461A",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  projectListContainer: {
-    marginTop: 16,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: "#F9F9F9",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  projectListItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  projectListItemText: {
-    fontSize: 16,
-    color: "#151E26",
-  },
-  dropdownItemStyle: {
-    flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#E9ECEF",
-  },
-  dropdownItemTxtStyle: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#151E26",
-  },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -246,60 +181,16 @@ const styles = StyleSheet.create({
   dropdownButtonArrowStyle: {
     fontSize: 28,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 20,
-    width: "80%",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    padding: 8,
-  },
-  modalButtons: {
+  dropdownItemStyle: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#E9ECEF",
   },
-  cancelButton: {
-    padding: 10,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 8,
-  },
-  cancelButtonText: {
-    color: "#000",
-  },
-  addButtonModal: {
-    padding: 10,
-    backgroundColor: "#F6461A",
-    borderRadius: 8,
-  },
-  floatingButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#F6461A",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-  },
-  addButtonText: {
-    color: "#fff",
+  dropdownItemTxtStyle: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: "#151E26",
   },
   singleProjectText: {
     fontSize: 16,
