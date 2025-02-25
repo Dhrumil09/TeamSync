@@ -24,7 +24,7 @@ export default function SignUpScreen() {
   const [signup, { isLoading }] = useSignUpApiMutation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [signupSuccess, setSignupSuccess] = useState(true);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const handleSignUp = async () => {
     // Input Validation
